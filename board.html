@@ -1,0 +1,363 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>登機廣播看板</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Noto+Sans+TC:wght@500;700;900&display=swap">
+<style>
+  /* 版面：機場出境翻牌看板。深色機殼＋翻牌字格，黃色是機場標誌色，只用在標題、狀態、廣播條 */
+  :root {
+    --case: #0c0d0f;       /* 機殼 */
+    --row: #121316;        /* 列底色 */
+    --row-alt: #15171a;
+    --tile-hi: #2a2c31;    /* 字格上半 */
+    --tile-lo: #202226;    /* 字格下半 */
+    --ink: #f1ede3;        /* 字格文字（暖白） */
+    --muted: #7c7f87;
+    --sign: #f5c518;       /* 機場黃 */
+    --ty: #5ccf9c;         /* 道謝 */
+    --lv: #ff86a6;         /* 道愛 */
+    --font-zh: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+    --font-sign: "Barlow Condensed", "Arial Narrow", "Roboto Condensed", sans-serif;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; background: var(--case); color: var(--ink); font-family: var(--font-zh); overflow: hidden; }
+  body { display: flex; flex-direction: column; }
+
+  /* ===== 標頭 ===== */
+  header { display: flex; align-items: center; gap: 1.6vw; padding: 1.6vh 2.4vw; }
+  .pict { width: 8.6vh; height: 8.6vh; background: var(--sign); border-radius: .8vh; display: grid; place-items: center; flex: none; }
+  .pict svg { width: 70%; height: 70%; }
+  .title { display: flex; flex-direction: column; line-height: 1; }
+  .title .zh { font-size: 5.6vh; font-weight: 900; color: var(--sign); letter-spacing: .12em; }
+  .title .en { font-family: var(--font-sign); font-size: 2.9vh; font-weight: 600; color: var(--sign); letter-spacing: .32em; text-transform: uppercase; margin-top: .6vh; }
+  .event { margin-left: 1.4vw; padding-left: 1.6vw; border-left: 2px solid #2a2c31; line-height: 1.35; }
+  .event b { display: block; font-size: 2.9vh; font-weight: 700; letter-spacing: .08em; }
+  .event span { font-size: 1.9vh; color: var(--muted); letter-spacing: .2em; }
+  .clockbox { margin-left: auto; display: flex; align-items: center; gap: 1.2vw; }
+  .date { text-align: right; font-family: var(--font-sign); color: var(--muted); font-size: 2.3vh; letter-spacing: .12em; line-height: 1.3; }
+  .date b { display: block; color: var(--ink); font-size: 2.8vh; font-weight: 600; }
+  #clock { --ch: 7.2vh; }
+
+  /* ===== 欄位標題 ===== */
+  .grid { display: grid; grid-template-columns: var(--c-flight) var(--c-to) var(--c-msg) 1fr; column-gap: var(--col-gap); align-items: center; }
+  .colhead { padding: .9vh 2.4vw; background: #17181b; border-block: 1px solid #25272b; }
+  .colhead div { line-height: 1.15; }
+  .colhead b { display: block; font-size: 2.1vh; font-weight: 700; color: var(--ink); letter-spacing: .3em; }
+  .colhead span { font-family: var(--font-sign); font-size: 1.6vh; font-weight: 600; color: var(--muted); letter-spacing: .28em; }
+  .colhead .right { text-align: right; }
+
+  /* ===== 看板 ===== */
+  main { flex: 1; padding: 0 2.4vw; overflow: hidden; }
+  .row { height: var(--row-h); padding-block: calc(var(--row-h) * .09); background: var(--row); overflow: hidden; }
+  .row:nth-child(even) { background: var(--row-alt); }
+  .row.slide { animation: slide .45s ease-out both; }
+  @keyframes slide { from { height: 0; padding-block: 0; } }
+
+  /* 翻牌字格：上半＋下半，中間一道轉軸縫 */
+  .flaps { display: flex; gap: calc(var(--ch) * .07); }
+  .flap { position: relative; width: calc(var(--ch) * .8); height: var(--ch); perspective: calc(var(--ch) * 6);
+    font-size: calc(var(--ch) * .66); font-weight: 700; color: var(--ink); border-radius: calc(var(--ch) * .08);
+    box-shadow: 0 calc(var(--ch) * .04) calc(var(--ch) * .06) rgba(0, 0, 0, .6); }
+  .flap.n { width: calc(var(--ch) * .56); font-family: var(--font-sign); font-size: calc(var(--ch) * .8); font-weight: 600; }
+  .flap.blank { opacity: .5; }
+  .h { position: absolute; left: 0; right: 0; height: 50%; overflow: hidden; backface-visibility: hidden; }
+  .h b { position: absolute; left: 0; right: 0; height: 200%; display: flex; align-items: center; justify-content: center; font-weight: inherit; }
+  .up, .lu { top: 0; background: linear-gradient(var(--tile-hi), #25272b); border-radius: calc(var(--ch) * .08) calc(var(--ch) * .08) 0 0; transform-origin: 50% 100%; }
+  .lo, .ll { bottom: 0; background: linear-gradient(var(--tile-lo), #1b1d20); border-radius: 0 0 calc(var(--ch) * .08) calc(var(--ch) * .08); transform-origin: 50% 0; }
+  .lo b, .ll b { top: -100%; }
+  .flap::after { content: ""; position: absolute; left: 0; right: 0; top: calc(50% - 1px); height: 2px; background: var(--case); z-index: 3; }
+  .flap::before { content: ""; position: absolute; top: calc(50% - 3px); left: -1px; width: 3px; height: 6px; background: #3a3c42; border-radius: 1px; z-index: 4; }
+  .lu, .ll { display: none; z-index: 2; }
+  .go .lu { display: block; animation: fallTop var(--d) ease-in both; background: linear-gradient(var(--tile-hi), #1e2023); }
+  .go .ll { display: block; animation: fallBot var(--d) ease-out var(--d) both; }
+  @keyframes fallTop { to { transform: rotateX(-90deg); } }
+  @keyframes fallBot { from { transform: rotateX(90deg); } }
+
+  .flight .flap { color: var(--c); }
+  .to .flap { color: var(--c); }
+  .ty { --c: var(--ty); } .lv { --c: var(--lv); }
+
+  .status { justify-self: end; display: flex; flex-direction: column; align-items: flex-end; line-height: 1.1; white-space: nowrap; }
+  .status b { font-size: calc(var(--row-h) * .42); font-weight: 700; color: var(--muted); letter-spacing: .12em; }
+  .status span { font-family: var(--font-sign); font-size: calc(var(--row-h) * .26); font-weight: 600; color: var(--muted); letter-spacing: .24em; }
+  .status.boarding b, .status.boarding span { color: var(--sign); }
+  .status.boarding b::before { content: ""; display: inline-block; width: .55em; height: .55em; border-radius: 50%; background: var(--sign);
+    margin-right: .45em; vertical-align: .08em; animation: blink .9s ease-in-out infinite alternate; }
+  .status.boarding { animation: glow .9s ease-in-out infinite alternate; }
+  @keyframes blink { to { opacity: .15; } }
+  @keyframes glow { to { opacity: .55; } }
+
+  .empty { color: var(--muted); font-size: 3.2vh; padding: 10vh 0; text-align: center; letter-spacing: .15em; }
+
+  /* ===== 底部廣播跑馬燈 ===== */
+  footer { display: flex; align-items: stretch; height: 7vh; background: var(--sign); color: #111; }
+  .onair { flex: none; display: flex; align-items: center; gap: .6vw; padding: 0 1.6vw; background: #111; color: var(--sign);
+    font-family: var(--font-sign); font-size: 2.4vh; font-weight: 700; letter-spacing: .25em; }
+  .ticker { flex: 1; overflow: hidden; display: flex; align-items: center; min-width: 0; }
+  .ticker-track { display: flex; white-space: nowrap; animation: tick 48s linear infinite; }
+  .ticker-track span { padding-right: 6vw; font-size: 2.7vh; font-weight: 700; letter-spacing: .06em; }
+  @keyframes tick { to { transform: translateX(-50%); } }
+  .tally { flex: none; display: flex; align-items: center; gap: 1.4vw; padding: 0 2vw; background: #111; color: var(--ink);
+    font-family: var(--font-sign); font-size: 2.4vh; font-weight: 600; letter-spacing: .12em; }
+  .tally i { font-style: normal; }
+  .tally .t { color: var(--ty); } .tally .l { color: var(--lv); }
+  #offline { color: var(--sign); }
+  [hidden] { display: none !important; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ticker-track, .status.boarding, .status.boarding b::before, .row.slide { animation: none; }
+  }
+</style>
+</head>
+<body>
+  <header>
+    <div class="pict" aria-hidden="true">
+      <svg viewBox="0 0 24 24"><path fill="#111" d="M2.5 19h19v2h-19zm19.07-9.64c-.21-.8-1.04-1.28-1.84-1.06L14.42 9.7 7.52 3.27l-1.93.51 4.14 7.17-4.97 1.33-1.97-1.54-1.45.39 2.59 4.49 16.57-4.43c.81-.23 1.28-1.05 1.07-1.85z"/></svg>
+    </div>
+    <div class="title"><span class="zh">出境</span><span class="en">Departures</span></div>
+    <div class="event"><b>候機室的真心話</b><span>前往下一站的登機廣播</span></div>
+    <div class="clockbox">
+      <div class="date"><b id="date">--/--</b><span id="weekday">---</span></div>
+      <div id="clock"></div>
+    </div>
+  </header>
+
+  <div class="grid colhead">
+    <div><b>航班</b><span>FLIGHT</span></div>
+    <div><b>前往</b><span>TO</span></div>
+    <div><b>真心話</b><span>MESSAGE</span></div>
+    <div class="right"><b>狀態</b><span>STATUS</span></div>
+  </div>
+
+  <main id="board"></main>
+
+  <footer>
+    <div class="onair">✈ 廣播 PA</div>
+    <div class="ticker"><div class="ticker-track" id="ticker"></div></div>
+    <div class="tally"><span id="offline" hidden>⚠ 連線中斷，顯示最後資料</span><i class="t">TY 道謝 <b id="nTy">0</b></i><i class="l">LV 道愛 <b id="nLv">0</b></i><i>已登機 <b id="count">0</b></i></div>
+  </footer>
+
+<script src="config.js"></script>
+<script>
+  // ===== 連線設定：API 網址寫在 config.js =====
+  const API = String(window.API_URL || '').trim();
+  const LIVE = /^https:\/\/script\.google\.com\//.test(API);   // 沒填網址時跑示範資料
+  const apiGet = q => fetch(API + '?api=' + q + '&t=' + Date.now()).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); });
+
+  // ===== 可調整的參數 =====
+  const ROWS = 12;           // 畫面顯示幾列（10–12 筆）
+  const POLL_MS = 4000;      // 多久向試算表拉一次資料
+  const BOARDING_MS = 8000;  // 新訊息「登機中」閃爍多久
+  const INSERT_GAP_MS = 3000;// 多則新訊息同時進來時，每則間隔
+  const IDLE_MS = 20000;     // 多久沒有新訊息就開始輪播舊的
+  const ROTATE_MS = 7000;    // 輪播間隔
+  const FLIP_MS = 55;        // 翻一片的半程時間
+  const CELLS = { flight: 6, to: 4, msg: 15 };   // 「前往」4 格、訊息 15 格，要和 Code.gs 的 TO_MAX_LEN、MAX_LEN 一致
+  const TICKER = [
+    '旅客請注意：如果生命只剩最後一週，你最想對誰說話？',
+    '請掃描 QR Code，留下 15 字以內的道謝或道愛航程短訊',
+    '有些話，別等到終點才說',
+    '旅途遇上亂流時，諮商中心隨時為你亮起引導燈',
+  ];
+
+  const $ = id => document.getElementById(id);
+  const board = $('board');
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let pool = [], known = new Set(), queue = [], onBoard = [];
+  let lastInsert = Date.now(), rotateAt = 0, rotatePtr = 0, loaded = false;
+
+  // ===== 尺寸：字格大小依列高與可用寬度自動計算 =====
+  function layout() {
+    const rowH = board.clientHeight / ROWS;
+    const avail = board.clientWidth;
+    // 窄格（英數）寬 .56、中文格寬 .8、格距 .07、欄距 1.3 格、狀態欄約 4 格
+    const units = CELLS.flight * .63 + (CELLS.to + CELLS.msg) * .87 + 3 * 1.3 + 4.2;
+    const ch = Math.min(rowH * .82, avail / units);
+    const w = (n, k) => n * ch * (k + .07) + 'px';
+    const s = document.documentElement.style;
+    s.setProperty('--row-h', rowH + 'px');
+    s.setProperty('--ch', ch + 'px');
+    s.setProperty('--col-gap', ch * 1.3 + 'px');
+    s.setProperty('--c-flight', w(CELLS.flight, .56));
+    s.setProperty('--c-to', w(CELLS.to, .8));
+    s.setProperty('--c-msg', w(CELLS.msg, .8));
+    s.setProperty('--d', FLIP_MS + 'ms');
+  }
+
+  // ===== 翻牌 =====
+  const NOISE_ZH = '的一是我你謝愛好想家媽爸室友自己記得吃飯辛苦朋友同學老師永遠陪伴感恩', NOISE_EN = 'ABCDEFGHJKLMNPRSTUVWXYZ0123456789';
+  const isNarrow = c => /[\x00-\x7f]/.test(c);
+
+  function tile(narrow) {
+    const el = document.createElement('span');
+    el.className = 'flap' + (narrow ? ' n' : '');
+    el.innerHTML = '<span class="h up"><b></b></span><span class="h lo"><b></b></span><span class="h lu"><b></b></span><span class="h ll"><b></b></span>';
+    el.cur = ' ';
+    return el;
+  }
+  function flipTo(el, next) {
+    const [up, lo, lu, ll] = el.querySelectorAll('b');
+    const old = el.cur;
+    el.cur = next;
+    if (reduce) { up.textContent = lo.textContent = next; return Promise.resolve(); }
+    up.textContent = next; lo.textContent = old; lu.textContent = old; ll.textContent = next;
+    el.classList.remove('go'); void el.offsetWidth; el.classList.add('go');
+    return new Promise(r => setTimeout(() => { lo.textContent = next; el.classList.remove('go'); r(); }, FLIP_MS * 2));
+  }
+  async function spinTo(el, final, delay, steps) {
+    await new Promise(r => setTimeout(r, delay));
+    if (final !== ' ') {
+      const noise = isNarrow(final) ? NOISE_EN : NOISE_ZH;
+      for (let i = 0; i < steps && !reduce; i++) await flipTo(el, noise[Math.floor(Math.random() * noise.length)]);
+    }
+    await flipTo(el, final);
+  }
+  function flaps(text, cells, cls, narrowCol) {
+    const wrap = document.createElement('div');
+    wrap.className = 'flaps ' + cls;
+    const chars = Array.from(text);
+    for (let i = 0; i < cells; i++) {
+      const c = chars[i] || ' ';
+      const el = tile(narrowCol);
+      if (!chars[i]) el.classList.add('blank');
+      el.dataset.final = c;
+      wrap.appendChild(el);
+    }
+    return wrap;
+  }
+  function spinRow(row) {
+    row.querySelectorAll('.flap').forEach((el, i) => spinTo(el, el.dataset.final, i * 35, 3 + (i % 10) + Math.floor(Math.random() * 3)));
+  }
+
+  const flightNo = m => (m.love ? 'LV' : 'TY') + '-' + String(m.id - 1).padStart(3, '0');
+
+  function makeRow(m, boarding) {
+    const row = document.createElement('div');
+    row.className = 'row grid slide ' + (m.love ? 'lv' : 'ty');
+    row.dataset.id = m.id;
+    const st = document.createElement('div');
+    const setStatus = b => {
+      st.className = 'status' + (b ? ' boarding' : '');
+      st.innerHTML = b ? '<b>登機中</b><span>BOARDING</span>' : '<b>已登機</b><span>DEPARTED</span>';
+    };
+    setStatus(boarding);
+    row.append(
+      flaps(flightNo(m), CELLS.flight, 'flight', true),
+      flaps(m.to, CELLS.to, 'to', false),
+      flaps(m.text, CELLS.msg, 'msg', false),
+      st);
+    if (boarding) setTimeout(() => setStatus(false), BOARDING_MS);
+    spinRow(row);
+    return row;
+  }
+
+  function pushTop(m, boarding) {
+    board.querySelector('.empty')?.remove();
+    board.querySelector(`.row[data-id="${m.id}"]`)?.remove();
+    board.prepend(makeRow(m, boarding));
+    while (board.children.length > ROWS) board.lastElementChild.remove();
+    onBoard = [...board.children].map(r => +r.dataset.id);
+  }
+
+  function renderInitial() {
+    board.innerHTML = '';
+    if (!pool.length) { board.innerHTML = '<div class="empty">候機中⋯⋯等待第一位旅客留下真心話</div>'; return; }
+    pool.slice(0, ROWS).forEach(m => board.appendChild(makeRow(m, false)));
+    onBoard = pool.slice(0, ROWS).map(m => m.id);
+    rotatePtr = ROWS;
+  }
+
+  // ===== 資料 =====
+  function onData(list) {
+    $('offline').hidden = true;
+    try { localStorage.setItem('boardCache', JSON.stringify(list)); } catch (e) {}
+    ingest(list);
+  }
+  function ingest(list) {
+    const ids = new Set(list.map(m => m.id));
+    [...board.querySelectorAll('.row')].forEach(r => { if (!ids.has(+r.dataset.id)) r.remove(); }); // 撤下的立即移除
+    queue = queue.filter(m => ids.has(m.id));
+    const fresh = list.filter(m => !known.has(m.id));
+    list.forEach(m => known.add(m.id));
+    pool = list;
+    $('count').textContent = pool.length;
+    $('nTy').textContent = pool.filter(m => !m.love).length;
+    $('nLv').textContent = pool.filter(m => m.love).length;
+    if (!loaded) { loaded = true; renderInitial(); return; }
+    queue.push(...fresh.reverse());
+    if (!board.querySelector('.row') && !queue.length) renderInitial();
+  }
+  function onFail(err) { console.error(err); $('offline').hidden = false; }
+
+  function poll() {
+    if (LIVE) apiGet('messages').then(onData).catch(onFail);
+    else demo();
+  }
+
+  // ===== 排程：新訊息優先，閒置時輪播舊的 =====
+  function scheduler() {
+    const now = Date.now();
+    if (queue.length && now - lastInsert >= INSERT_GAP_MS) {
+      pushTop(queue.shift(), true);
+      lastInsert = now; rotateAt = now + IDLE_MS;
+      return;
+    }
+    if (!queue.length && pool.length > 1 && now - lastInsert >= IDLE_MS && now >= rotateAt) {
+      let m;
+      if (pool.length > ROWS) {
+        for (let t = 0; t < pool.length && !m; t++) {
+          const c = pool[rotatePtr++ % pool.length];
+          if (!onBoard.includes(c.id)) m = c;
+        }
+      } else {
+        m = pool.find(p => p.id === onBoard[onBoard.length - 1]);
+      }
+      if (m) pushTop(m, false);
+      rotateAt = now + ROTATE_MS;
+    }
+  }
+
+  // ===== 時鐘（也是翻牌） =====
+  const clockTiles = [];
+  function buildClock() {
+    const wrap = $('clock');
+    wrap.className = 'flaps';
+    for (let i = 0; i < 5; i++) { const t = tile(true); wrap.appendChild(t); clockTiles.push(t); }
+  }
+  function tick() {
+    const d = new Date(), p = n => String(n).padStart(2, '0');
+    Array.from(p(d.getHours()) + ':' + p(d.getMinutes())).forEach((c, i) => { if (clockTiles[i].cur !== c) flipTo(clockTiles[i], c); });
+    $('date').textContent = p(d.getMonth() + 1) + '/' + p(d.getDate());
+    $('weekday').textContent = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'][d.getDay()];
+  }
+
+  function buildTicker() {
+    const html = TICKER.map(t => `<span>${t}</span>`).join('');
+    $('ticker').innerHTML = html + html; // 兩份接起來無縫循環
+  }
+
+  // ===== 直接用瀏覽器開這個檔案時的示範資料 =====
+  const DEMO = [['室友', '謝謝你買的宵夜', 0], ['媽媽', '記得吃飯，愛你啦', 1], ['自己', '謝謝當初那個沒有放棄的自己', 0],
+    ['阿嬤', '好想再吃你煮的飯', 1], ['學長', '謝謝你帶我飛', 0], ['爸', '你辛苦了，愛你', 1], ['班導', '謝謝你相信我', 0],
+    ['好朋友', '大學能遇到你真的太好了', 1], ['自己', '你已經很酷了', 1], ['高中同學', '謝謝你在我最低潮時接住我', 0],
+    ['弟弟', '要照顧好自己', 1], ['社團夥伴', '謝謝一起熬夜', 0], ['貓咪', '謝謝你陪我', 0], ['男友', '有你真好', 1]];
+  let demoN = 9;
+  function demo() {
+    if (loaded && demoN < DEMO.length && Math.random() < .35) demoN++;
+    onData(DEMO.slice(0, demoN).map((d, i) => ({ id: i + 2, to: d[0], text: d[1], love: !!d[2] })).reverse());
+  }
+
+  layout(); addEventListener('resize', layout); new ResizeObserver(layout).observe(board);
+  buildClock(); tick(); setInterval(tick, 5000);
+  buildTicker();
+  try { const c = JSON.parse(localStorage.getItem('boardCache')); if (c && LIVE) ingest(c); } catch (e) {}
+  poll(); setInterval(poll, POLL_MS);
+  setInterval(scheduler, 500);
+</script>
+</body>
+</html>

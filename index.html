@@ -1,0 +1,305 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>候機室的真心話｜登機報到</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Noto+Sans+TC:wght@400;500;700;900&display=swap">
+<style>
+  /* 版面：深色候機室背景上一張紙本登機證。上段填寫，撕線以下是送出／報到結果 */
+  :root {
+    --case: #0c0d0f;       /* 候機室背景，與看板相同 */
+    --paper: #f6f2e8;      /* 登機證紙色 */
+    --paper-2: #ebe5d6;    /* 紙上的欄位底 */
+    --ink: #1b1c1f;
+    --ink-2: #6d6a62;      /* 紙上的次要文字 */
+    --sign: #f5c518;       /* 機場黃 */
+    --ty: #1f9e6e;         /* 道謝（紙上用較深的綠） */
+    --lv: #d9467a;         /* 道愛（紙上用較深的粉） */
+    --danger: #c0392b;
+    --font-zh: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+    --font-sign: "Barlow Condensed", "Arial Narrow", "Roboto Condensed", sans-serif;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { background: var(--case); }
+  body { min-height: 100vh; background: var(--case); color: var(--paper); font-family: var(--font-zh);
+    padding: max(20px, env(safe-area-inset-top)) 16px max(28px, env(safe-area-inset-bottom));
+    display: flex; flex-direction: column; align-items: center; gap: 18px; -webkit-tap-highlight-color: transparent; }
+  [hidden] { display: none !important; }
+
+  .top { width: 100%; max-width: 420px; display: flex; align-items: center; gap: 12px; }
+  .pict { width: 40px; height: 40px; border-radius: 8px; background: var(--sign); display: grid; place-items: center; flex: none; }
+  .pict svg { width: 70%; height: 70%; }
+  .top b { display: block; font-size: 17px; font-weight: 700; letter-spacing: .08em; }
+  .top span { font-family: var(--font-sign); font-size: 13px; font-weight: 600; letter-spacing: .28em; color: var(--sign); }
+
+  /* ===== 登機證 ===== */
+  .pass { width: 100%; max-width: 420px; background: var(--paper); color: var(--ink); border-radius: 18px;
+    box-shadow: 0 18px 40px rgba(0, 0, 0, .45); position: relative; }
+  .band { background: var(--sign); border-radius: 18px 18px 0 0; padding: 12px 18px; display: flex; justify-content: space-between; align-items: center; }
+  .band .label { font-family: var(--font-sign); font-weight: 700; font-size: 15px; letter-spacing: .22em; line-height: 1.1; }
+  .band .label small { display: block; font-family: var(--font-zh); font-size: 12px; font-weight: 700; letter-spacing: .3em; }
+  .band .flight { font-family: var(--font-sign); font-weight: 700; font-size: 30px; letter-spacing: .06em; font-variant-numeric: tabular-nums; }
+
+  .body { padding: 16px 18px 18px; display: flex; flex-direction: column; gap: 16px; }
+  .cap { font-family: var(--font-sign); font-size: 12px; font-weight: 600; letter-spacing: .22em; color: var(--ink-2); text-transform: uppercase; }
+  .cap b { font-family: var(--font-zh); font-weight: 700; letter-spacing: .12em; margin-right: 6px; color: var(--ink); }
+
+  .route { display: grid; grid-template-columns: auto 1fr auto; align-items: end; gap: 12px; }
+  .route .from .big { font-size: 28px; font-weight: 900; line-height: 1.15; }
+  .route .plane { width: 28px; height: 28px; margin-bottom: 8px; color: var(--ink-2); }
+  .route .to { min-width: 0; text-align: right; }
+  .route input { width: 100%; font: 900 28px/1.15 var(--font-zh); color: var(--c, var(--ink)); background: none; border: 0;
+    border-bottom: 2px dashed var(--ink-2); text-align: right; padding: 2px 0; border-radius: 0; }
+  .route input::placeholder { color: #b9b2a2; }
+  .route input:focus { outline: none; border-bottom-style: solid; border-bottom-color: var(--ink); }
+
+  .class { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .class input { position: absolute; opacity: 0; pointer-events: none; }
+  .class label { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 8px; border-radius: 10px;
+    background: var(--paper-2); border: 2px solid transparent; font-weight: 700; font-size: 17px; cursor: pointer; }
+  .class label span { font-family: var(--font-sign); font-size: 14px; letter-spacing: .12em; color: var(--ink-2); }
+  #tyOpt:checked + label { border-color: var(--ty); color: var(--ty); background: #e2efe6; }
+  #lvOpt:checked + label { border-color: var(--lv); color: var(--lv); background: #f5e1e6; }
+  .class input:focus-visible + label { outline: 3px solid var(--sign); outline-offset: 2px; }
+
+  .ask { font-size: 15px; font-weight: 700; line-height: 1.5; }
+  .msg { position: relative; }
+  .msg textarea { width: 100%; resize: none; font: 700 22px/1.45 var(--font-zh); color: var(--ink); background: var(--paper-2);
+    border: 2px solid transparent; border-radius: 10px; padding: 12px 14px 26px; }
+  .msg textarea::placeholder { color: #aaa392; font-weight: 500; }
+  .msg textarea:focus { outline: none; border-color: var(--ink); }
+  .counter { position: absolute; right: 12px; bottom: 8px; font-family: var(--font-sign); font-size: 14px; font-weight: 600;
+    letter-spacing: .08em; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+  .counter.over { color: var(--danger); }
+
+  .facts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .facts div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .facts .cap b { display: block; margin: 0; }
+  .facts strong { font-size: 15px; font-weight: 700; }
+
+  /* 撕線 */
+  .tear { position: relative; height: 0; border-top: 2px dashed #cfc7b5; margin: 0 18px; }
+  .tear::before, .tear::after { content: ""; position: absolute; top: -13px; width: 24px; height: 24px; border-radius: 50%; background: var(--case); }
+  .tear::before { left: -31px; } .tear::after { right: -31px; }
+
+  .stub { padding: 18px; display: flex; flex-direction: column; gap: 12px; }
+  .go { width: 100%; padding: 16px; border: 0; border-radius: 12px; background: var(--ink); color: var(--sign);
+    font: 700 18px var(--font-zh); letter-spacing: .12em; cursor: pointer; display: flex; justify-content: center; align-items: baseline; gap: 10px; }
+  .go span { font-family: var(--font-sign); font-size: 15px; letter-spacing: .24em; }
+  .go:disabled { background: #cfc7b5; color: #8a8374; cursor: not-allowed; }
+  .go:focus-visible { outline: 3px solid var(--sign); outline-offset: 3px; }
+  .err { color: var(--danger); font-size: 14px; font-weight: 700; text-align: center; min-height: 1em; }
+  .hint { font-size: 12px; color: var(--ink-2); text-align: center; line-height: 1.6; }
+
+  /* 報到完成 */
+  .done { display: flex; flex-direction: column; gap: 12px; align-items: center; text-align: center; }
+  .done .big { font-size: 20px; font-weight: 900; }
+  .done p { font-size: 14px; line-height: 1.7; color: var(--ink-2); }
+  .done p b { color: var(--ink); }
+  .barcode { width: 100%; height: 46px; border-radius: 4px;
+    background: repeating-linear-gradient(90deg, var(--ink) 0 2px, transparent 2px 4px, var(--ink) 4px 7px, transparent 7px 9px, var(--ink) 9px 10px, transparent 10px 13px); }
+  .care { width: 100%; background: #fff7d6; border: 1px solid #ecd58a; border-radius: 10px; padding: 12px 14px; font-size: 14px; line-height: 1.7; text-align: left; color: var(--ink); }
+  .care p { color: var(--ink); font-size: 14px; }
+  .care .book { display: block; margin-top: 10px; padding: 12px; border-radius: 10px; background: var(--ink); color: var(--sign);
+    text-align: center; font-weight: 700; letter-spacing: .08em; text-decoration: none; }
+  .again { background: none; border: 0; font: 700 15px var(--font-zh); color: var(--ink); text-decoration: underline; text-underline-offset: 4px; cursor: pointer; padding: 6px; }
+
+  .done { position: relative; }
+  .stamp { position: absolute; right: 10px; bottom: 34px; padding: 6px 12px; border: 3px solid var(--c, var(--ty)); color: var(--c, var(--ty));
+    border-radius: 8px; transform: rotate(-12deg); font-weight: 900; font-size: 18px; letter-spacing: .1em; line-height: 1.1; text-align: center;
+    background: rgba(246, 242, 232, .85); animation: stamp .35s cubic-bezier(.2, 1.6, .5, 1) both; pointer-events: none; }
+  .stamp span { display: block; font-family: var(--font-sign); font-size: 13px; letter-spacing: .24em; }
+  @keyframes stamp { from { transform: rotate(-12deg) scale(2.2); opacity: 0; } }
+  .pass.lv { --c: var(--lv); } .pass.ty { --c: var(--ty); }
+
+  .foot { max-width: 420px; font-size: 12px; line-height: 1.7; color: #8b8e96; text-align: center; }
+
+  @media (prefers-reduced-motion: reduce) { .stamp { animation: none; } }
+</style>
+</head>
+<body>
+  <div class="top">
+    <div class="pict" aria-hidden="true">
+      <svg viewBox="0 0 24 24"><path fill="#111" d="M2.5 19h19v2h-19zm19.07-9.64c-.21-.8-1.04-1.28-1.84-1.06L14.42 9.7 7.52 3.27l-1.93.51 4.14 7.17-4.97 1.33-1.97-1.54-1.45.39 2.59 4.49 16.57-4.43c.81-.23 1.28-1.05 1.07-1.85z"/></svg>
+    </div>
+    <div><b>候機室的真心話</b><span>CHECK-IN 登機報到</span></div>
+  </div>
+
+  <form class="pass ty" id="pass" novalidate>
+    <div class="band">
+      <div class="label"><small>登機證</small>BOARDING PASS</div>
+      <div class="flight" id="flight">TY-···</div>
+    </div>
+
+    <div class="body">
+      <div class="route">
+        <div class="from">
+          <div class="cap"><b>出發</b>FROM</div>
+          <div class="big">此刻</div>
+        </div>
+        <svg class="plane" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z" transform="rotate(90 12 12)"/></svg>
+        <div class="to">
+          <label class="cap" for="to"><b>前往</b>TO</label>
+          <input id="to" name="to" autocomplete="off" placeholder="想對誰說？" enterkeyhint="next">
+        </div>
+      </div>
+
+      <div>
+        <div class="cap" style="margin-bottom:8px"><b>航程</b>CLASS</div>
+        <div class="class" role="radiogroup">
+          <input type="radio" name="type" id="tyOpt" value="道謝" checked><label for="tyOpt">✦ 道謝 <span>TY</span></label>
+          <input type="radio" name="type" id="lvOpt" value="道愛"><label for="lvOpt">♥ 道愛 <span>LV</span></label>
+        </div>
+      </div>
+
+      <div>
+        <label class="ask" for="text">如果生命只剩最後一週，你最想對他說什麼？</label>
+        <div class="msg" style="margin-top:8px">
+          <textarea id="text" name="text" rows="2" placeholder="謝謝你接住我的emo"></textarea>
+          <div class="counter" id="counter">0 / 15</div>
+        </div>
+      </div>
+
+      <div class="facts">
+        <div><span class="cap"><b>乘客</b>PASSENGER</span><strong>匿名旅客</strong></div>
+        <div><span class="cap"><b>行李</b>BAGGAGE</span><strong>0 KG</strong></div>
+        <div><span class="cap"><b>登機門</b>GATE</span><strong>大螢幕</strong></div>
+      </div>
+    </div>
+
+    <div class="tear" aria-hidden="true"></div>
+
+    <div class="stub" id="stub">
+      <button class="go" id="go" type="submit" disabled>完成報到 <span>CHECK IN</span></button>
+      <div class="err" id="err" role="alert"></div>
+      <div class="hint">不記名。你的真心話會以航班的形式出現在攤位的大螢幕上。</div>
+    </div>
+
+    <div class="stub done" id="done" hidden>
+      <div class="big">報到完成，祝你旅途平安</div>
+      <p id="doneMsg"></p>
+      <div class="care" id="care" hidden></div>
+      <div class="barcode" aria-hidden="true"></div>
+      <button class="again" id="again" type="button">再寫一張登機證</button>
+    </div>
+  </form>
+
+  <p class="foot" id="foot">這裡沒有超重行李，只有心底最重要的一句話。</p>
+
+<script src="config.js"></script>
+<script>
+  // ===== 連線設定：API 網址寫在 config.js =====
+  const API = String(window.API_URL || '').trim();
+  const LIVE = /^https:\/\/script\.google\.com\//.test(API);   // 沒填網址時跑示範資料
+  const apiGet = q => fetch(API + '?api=' + q + '&t=' + Date.now()).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); });
+
+  // 預設值；連上 API 後會改用 Code.gs 裡的設定
+  let MAX = 15, TO_MAX = 4, COUNSEL = '';
+
+  const $ = id => document.getElementById(id);
+  const pass = $('pass'), to = $('to'), text = $('text'), go = $('go');
+  const EXAMPLES = ['謝謝你接住我的emo', '謝室友半夜陪我買宵夜', '大學遇到你真好', '記得吃飯，愛你啦', '給自己：你已經很酷了', '謝當初沒放棄的自己'];
+  const len = s => Array.from(s.trim()).length;
+  let sending = false;
+
+  text.placeholder = EXAMPLES[Math.floor(Math.random() * EXAMPLES.length)];
+  to.placeholder = '想對誰說？' + TO_MAX + '字內';
+  $('counter').textContent = '0 / ' + MAX;
+  if (LIVE) {
+    apiGet('config').then(c => {
+      MAX = c.maxLen; TO_MAX = c.toMaxLen;
+      COUNSEL = /^https?:\/\//.test(c.counselUrl || '') ? c.counselUrl : '';
+      to.placeholder = '想對誰說？' + TO_MAX + '字內';
+      refresh();
+    }).catch(() => {});
+  }
+
+  function type() { return pass.querySelector('input[name="type"]:checked').value; }
+  function refresh() {
+    const love = type() === '道愛';
+    pass.classList.toggle('lv', love); pass.classList.toggle('ty', !love);
+    if (!pass.classList.contains('checked')) $('flight').textContent = (love ? 'LV' : 'TY') + '-···';
+    const n = len(text.value), m = len(to.value);
+    $('counter').textContent = n + ' / ' + MAX;
+    $('counter').classList.toggle('over', n > MAX);
+    let err = '';
+    if (m > TO_MAX) err = '「前往」最多 ' + TO_MAX + ' 個字';
+    else if (n > MAX) err = '短句最多 ' + MAX + ' 個字，再精簡一點';
+    $('err').textContent = err;
+    go.disabled = sending || !n || !m || !!err;
+  }
+  [to, text].forEach(el => el.addEventListener('input', refresh));
+  pass.querySelectorAll('input[name="type"]').forEach(el => el.addEventListener('change', refresh));
+  text.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); if (!go.disabled) pass.requestSubmit(); } });
+  to.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); text.focus(); } });
+
+  pass.addEventListener('submit', e => {
+    e.preventDefault();
+    if (go.disabled) return;
+    sending = true; refresh();
+    go.firstChild.textContent = '報到中⋯ ';
+    const data = { type: type(), to: to.value.trim(), text: text.value.trim() };
+    if (LIVE) {
+      // 不設 Content-Type（預設 text/plain），瀏覽器就不會先發預檢請求，Apps Script 才收得到
+      fetch(API, { method: 'POST', body: JSON.stringify(data) })
+        .then(r => r.json())
+        .then(res => res.ok ? done(res) : fail(new Error(res.error)))
+        .catch(() => fail());
+    } else {
+      setTimeout(() => done({ flight: (data.type === '道愛' ? 'LV' : 'TY') + '-0' + (20 + Math.floor(Math.random() * 60)), pending: /care/.test(location.search), care: /care/.test(location.search) }), 700);
+    }
+  });
+
+  function fail(err) {
+    sending = false;
+    go.firstChild.textContent = '完成報到 ';
+    refresh();
+    $('err').textContent = (err && err.message ? err.message.replace(/^Error:\s*/, '') : '') || '網路好像不太穩，請再按一次';
+  }
+
+  function done(res) {
+    sending = false;
+    pass.classList.add('checked');
+    $('flight').textContent = res.flight;
+    [to, text].forEach(el => el.readOnly = true);
+    pass.querySelectorAll('input[name="type"]').forEach(el => el.disabled = true);
+    $('stub').hidden = true;
+    $('done').hidden = false;
+    $('doneMsg').innerHTML = res.care
+      ? '你的航班 <b>' + res.flight + '</b> 已完成報到。'
+      : res.pending
+      ? '你的航班 <b>' + res.flight + '</b> 已完成報到。<br>志工確認後就會出現在大螢幕上，記得抬頭找找看。'
+      : '你的航班 <b>' + res.flight + '</b> 已完成報到。<br>現在抬頭看看大螢幕吧。';
+    if (res.care) {
+      $('care').hidden = false;
+      $('care').innerHTML = '<p>謝謝你願意寫下來。最近如果過得很辛苦，你不用一個人撐著。'
+        + (COUNSEL ? '歡迎申請諮商中心的初談，讓專業的老師陪你聊聊。</p><a class="book" href="' + COUNSEL + '" target="_blank" rel="noopener">申請諮商中心初談</a>'
+                   : '歡迎到諮商中心申請初談，讓專業的老師陪你聊聊。</p>');
+    }
+    const stamp = document.createElement('div');
+    stamp.className = 'stamp';
+    stamp.innerHTML = '已報到<span>CHECKED IN</span>';
+    $('done').appendChild(stamp);
+    pass.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  $('again').addEventListener('click', () => {
+    pass.classList.remove('checked');
+    pass.querySelector('.stamp')?.remove();
+    [to, text].forEach(el => { el.readOnly = false; el.value = ''; });
+    pass.querySelectorAll('input[name="type"]').forEach(el => el.disabled = false);
+    $('care').hidden = true;
+    $('done').hidden = true; $('stub').hidden = false;
+    go.firstChild.textContent = '完成報到 ';
+    text.placeholder = EXAMPLES[Math.floor(Math.random() * EXAMPLES.length)];
+    refresh(); to.focus();
+  });
+
+  refresh();
+</script>
+</body>
+</html>
