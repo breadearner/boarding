@@ -223,10 +223,10 @@
       <!-- 特殊關懷提醒：僅當留言觸發 CONCERN（res.care === true）時才會顯示 -->
       <div class="care" id="care" hidden></div>
 
-      <!-- 專屬航程好禮：隨機抽取手機桌布（共 7 款） -->
+      <!-- 專屬航程好禮：隨機抽取手機桌布 -->
       <div class="gift">
         <div class="gift-head">
-          <div class="gift-title">🎁 航程祝福桌布 <span class="gift-badge" id="wpBadge">1 / 7</span></div>
+          <div class="gift-title">🎁 航程祝福桌布</div>
           <button type="button" class="wp-next" id="wpNext">🎲 換抽一張</button>
         </div>
         <div class="wp-card">
@@ -234,11 +234,10 @@
         </div>
         <div class="wp-quote" id="wpQuote"></div>
         <div class="wp-actions">
-          <button type="button" class="btn-share" id="shareWp">📲 發佈到 IG 限動／分享</button>
-          <a class="btn-dl" id="dlWp" href="wallpapers/wp1.jpg" download="候機室的真心話_祝福桌布1.jpg">📥 直接下載桌布</a>
+          <a class="btn-dl" id="dlWp" href="wallpapers/wp1.jpg" download="候機室的真心話_祝福桌布1.jpg">📥 儲存桌布</a>
+          <button type="button" class="btn-share" id="shareWp">📲 開啟 IG 發限動</button>
         </div>
         <div class="wp-toast" id="wpToast" hidden></div>
-        <div class="wp-tip">💡 小撇步：也可以直接「長按上方圖片」儲存到手機相簿喔！</div>
       </div>
 
       <a class="btn-ig-follow" id="igFollow" href="#" target="_blank" rel="noopener" hidden>✈ 追蹤「探心知己社」IG</a>
@@ -261,7 +260,7 @@
   let COUNSEL = /^https?:\/\//.test(window.COUNSEL_URL || '') ? window.COUNSEL_URL.trim() : '';
   let IG_URL = /^https?:\/\//.test(window.IG_URL || '') ? window.IG_URL.trim() : '';
 
-  // ===== 7 款專屬手機桌布清單 =====
+  // ===== 專屬手機桌布清單 =====
   const WALLPAPERS = [
     { src: 'wallpapers/wp1.jpg', file: '候機室的真心話_桌布1.jpg', quote: '「累了就好好休息，你的存在本身，就值得被溫柔以待」' },
     { src: 'wallpapers/wp2.jpg', file: '候機室的真心話_桌布2.jpg', quote: '「亂流有時，你已經走得很好，謝謝一路堅持的自己」' },
@@ -272,6 +271,8 @@
     { src: 'wallpapers/wp7.png', file: '候機室的真心話_桌布7.png', quote: '「不用急著飛，先看看海，把疲憊交給今天的海吧」' },
   ];
   let curWp = Math.floor(Math.random() * WALLPAPERS.length);
+  let cachedFile = null;
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
   const $ = id => document.getElementById(id);
   const pass = $('pass'), to = $('to'), text = $('text'), go = $('go');
@@ -279,48 +280,55 @@
   const len = s => Array.from(s.trim()).length;
   let sending = false;
 
+  // 預先將當前桌布載入為 File 物件，讓 iOS 點擊時零延遲喚起純圖片選單
+  async function preloadWpFile(w) {
+    cachedFile = null;
+    try {
+      const res = await fetch(w.src);
+      const blob = await res.blob();
+      const mime = w.src.endsWith('.png') ? 'image/png' : 'image/jpeg';
+      cachedFile = new File([blob], w.file, { type: mime });
+    } catch (e) {}
+  }
+
   function renderWallpaper(idx) {
     curWp = (idx + WALLPAPERS.length) % WALLPAPERS.length;
     const w = WALLPAPERS[curWp];
     $('wpImg').src = w.src;
-    $('wpBadge').textContent = (curWp + 1) + ' / ' + WALLPAPERS.length;
     $('wpQuote').textContent = w.quote;
     $('dlWp').href = w.src;
     $('dlWp').download = w.file;
     $('wpToast').hidden = true;
+    preloadWpFile(w);
   }
 
   $('wpNext').addEventListener('click', () => {
-    // 隨機抽另一張（或依序切換，確保每次按都會換不同張）
     let next = Math.floor(Math.random() * WALLPAPERS.length);
     if (next === curWp) next = (curWp + 1) % WALLPAPERS.length;
     renderWallpaper(next);
   });
 
-  // 喚起手機原生分享（可直接選 Instagram 限時動態）
-  $('shareWp').addEventListener('click', async () => {
+  // 儲存桌布：在 iOS 上避免 <a download> 跑去「檔案 App」，改喚起純圖片選單（點「儲存影像」即可直接存進 iOS 相簿！）
+  $('dlWp').addEventListener('click', async e => {
+    if (!isIOS) return; // Android 與電腦直接走原生 download
+    e.preventDefault();
     const w = WALLPAPERS[curWp];
-    const toast = $('wpToast');
-    toast.hidden = true;
     try {
-      const res = await fetch(w.src);
-      const blob = await res.blob();
-      const mime = w.src.endsWith('.png') ? 'image/png' : 'image/jpeg';
-      const file = new File([blob], w.file, { type: mime });
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({
-          files: [file],
-          title: '候機室的真心話｜航程祝福桌布',
-        });
+      if (!cachedFile) await preloadWpFile(w);
+      if (cachedFile && navigator.canShare && navigator.canShare({ files: [cachedFile] })) {
+        // 注意：不可傳入 title 或 text，否則 iOS 會當成文字分享而非純照片
+        await navigator.share({ files: [cachedFile] });
         return;
       }
     } catch (err) {
-      if (err && err.name === 'AbortError') return; // 使用者取消分享選單
+      if (err && err.name === 'AbortError') return;
     }
-    // 備援（例如 LINE 內建瀏覽器或電腦瀏覽器不支援 Web Share Files）：觸發下載並提示
-    $('dlWp').click();
-    toast.textContent = '✨ 已為你準備圖片！長按上方桌布儲存後，即可打開 IG 發限動喔';
-    toast.hidden = false;
+    window.open(w.src, '_blank');
+  });
+
+  // 開啟 IG 發限動：直接透過 Deep Link 跳轉開啟手機內的 Instagram 限時動態相機
+  $('shareWp').addEventListener('click', () => {
+    location.href = 'instagram://story-camera';
   });
 
   text.placeholder = EXAMPLES[Math.floor(Math.random() * EXAMPLES.length)];
