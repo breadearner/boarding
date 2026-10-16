@@ -1,0 +1,14 @@
+# 企劃文件與壓縮檔不公開到 GitHub Pages
+*.docx
+*.zip
+設定步驟.md
+Code.gs
+
+# 原始桌布檔（已整理至 wallpapers/ 資料夾）
+1_0.jpg
+2_0.jpg
+3_0.jpg
+4_0.jpg
+5_0.jpg
+桌布1_0.png
+桌布2_0.png
