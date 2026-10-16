@@ -178,14 +178,28 @@
   let lastInsert = Date.now(), rotateAt = 0, rotatePtr = 0, loaded = false;
 
   // ===== 機場廣播叮咚聲與機械翻牌音效（Web Audio API 合成，零外部檔案相依） =====
-  let audioCtx = null, soundOn = false, lastTickTime = 0;
+  let audioCtx = null, flapNoiseBuf = null, soundOn = false, lastTickTime = 0;
 
   function ensureAudio() {
+    // 支援 iOS (iPhone/iPad) 即使側邊實體靜音鍵開啟也能正常播放音效
+    if (navigator.audioSession) {
+      try { navigator.audioSession.type = 'playback'; } catch (e) {}
+    }
     if (!audioCtx) {
       const AC = window.AudioContext || window.webkitAudioContext;
       if (AC) audioCtx = new AC();
     }
     if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+    // 建立機械翻牌葉片拍擊的短白噪音樣本（只建一次，重複使用）
+    if (audioCtx && !flapNoiseBuf) {
+      const len = Math.floor(audioCtx.sampleRate * 0.024);
+      flapNoiseBuf = audioCtx.createBuffer(1, len, audioCtx.sampleRate);
+      const data = flapNoiseBuf.getChannelData(0);
+      for (let i = 0; i < len; i++) {
+        // 前段陡峭拍擊、快速指數衰減，模擬塑膠字牌翻落撞擊聲
+        data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2.2);
+      }
+    }
   }
 
   // 機場經典雙音階登機廣播鐘聲（Ding-Dong: G5 -> E5）
@@ -202,10 +216,10 @@
       osc2.type = 'triangle';
       osc2.frequency.setValueAtTime(freq * 2, start); // 柔和泛音
       const g2 = audioCtx.createGain();
-      g2.gain.setValueAtTime(0.12, start);
+      g2.gain.setValueAtTime(0.14, start);
 
       gain.gain.setValueAtTime(0.0001, start);
-      gain.gain.linearRampToValueAtTime(0.28, start + 0.018);
+      gain.gain.linearRampToValueAtTime(0.32, start + 0.018);
       gain.gain.exponentialRampToValueAtTime(0.0008, start + dur);
 
       osc1.connect(gain);
@@ -220,25 +234,43 @@
     playBell(659.25, now + 0.42, 1.55); // Dong (E5)
   }
 
-  // 機械翻牌細微喀噠聲（節流控制，避免多格同時翻動時音量疊加）
+  // 機械翻牌清脆啪嗒聲（結合葉片噪音與中頻共鳴，手機與電視喇叭皆清晰可聞）
   function playFlapTick() {
     if (!soundOn || !audioCtx) return;
     const nowMs = performance.now();
-    if (nowMs - lastTickTime < 28) return; // 每 28ms 最多響一次，形成自然的機械翻牌節奏
+    if (nowMs - lastTickTime < 26) return; // 每 26ms 最多響一次，形成「喀啦啦啦」機械翻牌節奏
     lastTickTime = nowMs;
+    ensureAudio();
     const now = audioCtx.currentTime;
+
+    // 1. 塑膠字牌拍擊聲（Bandpass 濾波白噪音 1300~2200Hz，手機喇叭最清楚的頻段）
+    if (flapNoiseBuf) {
+      const src = audioCtx.createBufferSource();
+      src.buffer = flapNoiseBuf;
+      const filter = audioCtx.createBiquadFilter();
+      filter.type = 'bandpass';
+      filter.frequency.setValueAtTime(1400 + Math.random() * 500, now);
+      filter.Q.setValueAtTime(1.8, now);
+      const nGain = audioCtx.createGain();
+      nGain.gain.setValueAtTime(0.35, now);
+      src.connect(filter);
+      filter.connect(nGain);
+      nGain.connect(audioCtx.destination);
+      src.start(now);
+    }
+
+    // 2. 轉軸機械短促敲擊音（720Hz -> 180Hz）
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
     osc.type = 'triangle';
-    const baseFreq = 260 + Math.random() * 90;
-    osc.frequency.setValueAtTime(baseFreq, now);
-    osc.frequency.exponentialRampToValueAtTime(90, now + 0.016);
-    gain.gain.setValueAtTime(0.045, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.016);
+    osc.frequency.setValueAtTime(680 + Math.random() * 160, now);
+    osc.frequency.exponentialRampToValueAtTime(170, now + 0.018);
+    gain.gain.setValueAtTime(0.18, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.018);
     osc.connect(gain);
     gain.connect(audioCtx.destination);
     osc.start(now);
-    osc.stop(now + 0.018);
+    osc.stop(now + 0.02);
   }
 
   $('soundBtn').addEventListener('click', () => {
@@ -247,7 +279,15 @@
     const btn = $('soundBtn');
     btn.classList.toggle('on', soundOn);
     btn.textContent = soundOn ? '🔊 廣播音效開啟' : '🔇 點擊啟用音效';
-    if (soundOn) playChime(); // 點擊開啟時立即試播一聲叮咚，方便現場確認喇叭音量
+    if (soundOn) {
+      playChime(); // 立即試播叮咚廣播聲
+      // 接著立刻翻動第一列（若尚無留言則翻動時鐘），讓使用者當場聽到「叮咚＋喀啦啦翻牌聲」
+      setTimeout(() => {
+        const firstRow = board.querySelector('.row');
+        if (firstRow) spinRow(firstRow);
+        else clockTiles.forEach((el, i) => spinTo(el, el.cur || '0', i * 45, 5));
+      }, 350);
+    }
   });
 
   // ===== 尺寸：字格大小依列高與可用寬度自動計算 =====
@@ -391,7 +431,7 @@
       lastInsert = now; rotateAt = now + IDLE_MS;
       return;
     }
-    if (!queue.length && pool.length > 1 && now - lastInsert >= IDLE_MS && now >= rotateAt) {
+    if (!queue.length && pool.length >= 1 && now - lastInsert >= IDLE_MS && now >= rotateAt) {
       let m;
       if (pool.length > ROWS) {
         for (let t = 0; t < pool.length && !m; t++) {

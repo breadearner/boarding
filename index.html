@@ -97,16 +97,19 @@
 
   /* 報到完成與印章 */
   .done { display: flex; flex-direction: column; gap: 14px; align-items: center; text-align: center; position: relative; }
-  .done .big { font-size: 20px; font-weight: 900; }
-  .done p { font-size: 14px; line-height: 1.7; color: var(--ink-2); }
-  .done p b { color: var(--ink); }
-
-  .stamp { position: absolute; right: 16px; bottom: 14px; padding: 6px 12px; border: 3px solid var(--c, var(--ty)); color: var(--c, var(--ty));
+  .barcode-wrap { width: 100%; position: relative; padding: 2px 0 6px; margin-bottom: 2px; border-bottom: 1.5px solid #dfd8c8; padding-bottom: 16px; }
+  .barcode { width: 100%; height: 46px; border-radius: 4px;
+    background: repeating-linear-gradient(90deg, var(--ink) 0 2px, transparent 2px 4px, var(--ink) 4px 7px, transparent 7px 9px, var(--ink) 9px 10px, transparent 10px 13px); }
+  .stamp { position: absolute; right: 8px; top: -8px; padding: 6px 12px; border: 3px solid var(--c, var(--ty)); color: var(--c, var(--ty));
     border-radius: 8px; transform: rotate(-12deg); font-weight: 900; font-size: 18px; letter-spacing: .1em; line-height: 1.1; text-align: center;
-    background: rgba(246, 242, 232, .9); animation: stamp .35s cubic-bezier(.2, 1.6, .5, 1) both; pointer-events: none; z-index: 5; }
+    background: rgba(246, 242, 232, .92); animation: stamp .35s cubic-bezier(.2, 1.6, .5, 1) both; pointer-events: none; z-index: 5; }
   .stamp span { display: block; font-family: var(--font-sign); font-size: 13px; letter-spacing: .24em; }
   @keyframes stamp { from { transform: rotate(-12deg) scale(2.2); opacity: 0; } }
   .pass.lv { --c: var(--lv); } .pass.ty { --c: var(--ty); }
+
+  .done .big { font-size: 20px; font-weight: 900; }
+  .done p { font-size: 14px; line-height: 1.7; color: var(--ink-2); }
+  .done p b { color: var(--ink); }
 
   /* 特殊關懷提醒（僅限 CONCERN 特殊留言才會出現） */
   .care { width: 100%; background: #fff7d6; border: 1.5px solid #e2c267; border-radius: 12px; padding: 14px; font-size: 14px; line-height: 1.7; text-align: left; color: var(--ink); }
@@ -144,8 +147,6 @@
   .btn-ig-follow { width: 100%; padding: 11px 14px; border-radius: 10px; background: var(--ink); color: var(--sign);
     font: 700 14px var(--font-zh); letter-spacing: .06em; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 6px; }
 
-  .barcode { width: 100%; height: 42px; border-radius: 4px;
-    background: repeating-linear-gradient(90deg, var(--ink) 0 2px, transparent 2px 4px, var(--ink) 4px 7px, transparent 7px 9px, var(--ink) 9px 10px, transparent 10px 13px); }
   .again { background: none; border: 0; font: 700 14px var(--font-zh); color: var(--ink-2); text-decoration: underline; text-underline-offset: 4px; cursor: pointer; padding: 4px; }
 
   .foot { max-width: 420px; font-size: 12px; line-height: 1.7; color: #8b8e96; text-align: center; }
@@ -212,6 +213,10 @@
     </div>
 
     <div class="stub done" id="done" hidden>
+      <div class="barcode-wrap" id="barcodeWrap">
+        <div class="barcode" aria-hidden="true"></div>
+      </div>
+
       <div class="big">報到完成，祝你旅途平安</div>
       <p id="doneMsg"></p>
 
@@ -238,7 +243,6 @@
 
       <a class="btn-ig-follow" id="igFollow" href="#" target="_blank" rel="noopener" hidden>✈ 追蹤「探心知己社」IG</a>
 
-      <div class="barcode" aria-hidden="true"></div>
       <button class="again" id="again" type="button">再寫一張登機證</button>
     </div>
   </form>
@@ -421,7 +425,7 @@
     const stamp = document.createElement('div');
     stamp.className = 'stamp';
     stamp.innerHTML = '已報到<span>CHECKED IN</span>';
-    $('passBody').appendChild(stamp);
+    $('barcodeWrap').appendChild(stamp);
     pass.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
