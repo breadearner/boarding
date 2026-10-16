@@ -235,7 +235,7 @@
         <div class="wp-quote" id="wpQuote"></div>
         <div class="wp-actions">
           <a class="btn-dl" id="dlWp" href="wallpapers/wp1.jpg" download="候機室的真心話_祝福桌布1.jpg">📥 儲存桌布</a>
-          <button type="button" class="btn-share" id="shareWp">📲 開啟 IG 發限動</button>
+          <button type="button" class="btn-share" id="shareWp">📲 分享祝福至 IG</button>
         </div>
         <div class="wp-toast" id="wpToast" hidden></div>
       </div>
@@ -280,7 +280,7 @@
   const len = s => Array.from(s.trim()).length;
   let sending = false;
 
-  // 預先將當前桌布載入為 File 物件，讓 iOS 點擊時零延遲喚起純圖片選單
+  // 預先將當前桌布載入為 File 物件，讓點擊時零延遲喚起純圖片選單
   async function preloadWpFile(w) {
     cachedFile = null;
     try {
@@ -308,27 +308,35 @@
     renderWallpaper(next);
   });
 
-  // 儲存桌布：在 iOS 上避免 <a download> 跑去「檔案 App」，改喚起純圖片選單（點「儲存影像」即可直接存進 iOS 相簿！）
-  $('dlWp').addEventListener('click', async e => {
-    if (!isIOS) return; // Android 與電腦直接走原生 download
-    e.preventDefault();
+  // 共用純圖片系統選單喚起函式（不帶 title/text，確保 iOS/Android 視為純照片，可直接點「儲存影像」或「Instagram 限時動態」）
+  async function sharePureImage() {
     const w = WALLPAPERS[curWp];
     try {
       if (!cachedFile) await preloadWpFile(w);
       if (cachedFile && navigator.canShare && navigator.canShare({ files: [cachedFile] })) {
-        // 注意：不可傳入 title 或 text，否則 iOS 會當成文字分享而非純照片
         await navigator.share({ files: [cachedFile] });
-        return;
+        return true;
       }
     } catch (err) {
-      if (err && err.name === 'AbortError') return;
+      if (err && err.name === 'AbortError') return true;
     }
-    window.open(w.src, '_blank');
+    return false;
+  }
+
+  // 📥 儲存桌布：在 iOS 上喚起純圖片選單（點「儲存影像」進相簿）；Android 與電腦直接下載
+  $('dlWp').addEventListener('click', async e => {
+    if (!isIOS) return;
+    e.preventDefault();
+    const ok = await sharePureImage();
+    if (!ok) window.open(WALLPAPERS[curWp].src, '_blank');
   });
 
-  // 開啟 IG 發限動：直接透過 Deep Link 跳轉開啟手機內的 Instagram 限時動態相機
-  $('shareWp').addEventListener('click', () => {
-    location.href = 'instagram://story-camera';
+  // 📲 分享祝福至 IG：喚起純圖片系統選單，點選 Instagram 即可直接把這張桌布帶進限動當基底
+  $('shareWp').addEventListener('click', async () => {
+    const ok = await sharePureImage();
+    if (!ok) {
+      $('dlWp').click();
+    }
   });
 
   text.placeholder = EXAMPLES[Math.floor(Math.random() * EXAMPLES.length)];
