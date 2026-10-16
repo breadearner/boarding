@@ -162,7 +162,7 @@
   const INSERT_GAP_MS = 3000;// 多則新訊息同時進來時，每則間隔
   const IDLE_MS = 20000;     // 多久沒有新訊息就開始輪播舊的
   const ROTATE_MS = 7000;    // 輪播間隔
-  const FLIP_MS = 55;        // 翻一片的半程時間
+  const FLIP_MS = 65;        // 翻一片的半程時間（配合 C2 慢速柔和翻頁感）
   const CELLS = { flight: 6, to: 4, msg: 20 };   // 預設值；連上 API 後會自動改成 Code.gs 的 TO_MAX_LEN、MAX_LEN
   const TICKER = [
     '旅客請注意：如果生命只剩最後一週，你最想對誰說話？',
@@ -177,8 +177,8 @@
   let pool = [], known = new Set(), queue = [], onBoard = [];
   let lastInsert = Date.now(), rotateAt = 0, rotatePtr = 0, loaded = false;
 
-  // ===== 機場廣播叮咚聲與機械翻牌音效（Web Audio API 合成，零外部檔案相依） =====
-  let audioCtx = null, flapNoiseBuf = null, soundOn = false, lastTickTime = 0;
+  // ===== 機場廣播叮咚聲與 C2 慢速絲絨軟葉片翻頁鐘音效（Web Audio API 合成） =====
+  let audioCtx = null, pinkBuf = null, soundOn = false, lastTickTime = 0;
 
   function ensureAudio() {
     // 支援 iOS (iPhone/iPad) 即使側邊實體靜音鍵開啟也能正常播放音效
@@ -190,14 +190,22 @@
       if (AC) audioCtx = new AC();
     }
     if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
-    // 建立機械翻牌葉片拍擊的短白噪音樣本（只建一次，重複使用）
-    if (audioCtx && !flapNoiseBuf) {
-      const len = Math.floor(audioCtx.sampleRate * 0.024);
-      flapNoiseBuf = audioCtx.createBuffer(1, len, audioCtx.sampleRate);
-      const data = flapNoiseBuf.getChannelData(0);
+    // 建立溫暖的粉紅噪音（Pink Noise）基底，作為 C2 軟質翻頁鐘葉片刷動聲
+    if (audioCtx && !pinkBuf) {
+      const len = Math.floor(audioCtx.sampleRate * 0.25);
+      pinkBuf = audioCtx.createBuffer(1, len, audioCtx.sampleRate);
+      const out = pinkBuf.getChannelData(0);
+      let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
       for (let i = 0; i < len; i++) {
-        // 前段陡峭拍擊、快速指數衰減，模擬塑膠字牌翻落撞擊聲
-        data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2.2);
+        const white = Math.random() * 2 - 1;
+        b0 = 0.99886 * b0 + white * 0.0555179;
+        b1 = 0.99332 * b1 + white * 0.0750759;
+        b2 = 0.96900 * b2 + white * 0.1538520;
+        b3 = 0.86650 * b3 + white * 0.3104856;
+        b4 = 0.55000 * b4 + white * 0.5329522;
+        b5 = -0.7616 * b5 - white * 0.0168980;
+        out[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362) * 0.05;
+        b6 = white * 0.115926;
       }
     }
   }
@@ -214,12 +222,12 @@
       osc1.type = 'sine';
       osc1.frequency.setValueAtTime(freq, start);
       osc2.type = 'triangle';
-      osc2.frequency.setValueAtTime(freq * 2, start); // 柔和泛音
+      osc2.frequency.setValueAtTime(freq * 2, start);
       const g2 = audioCtx.createGain();
-      g2.gain.setValueAtTime(0.14, start);
+      g2.gain.setValueAtTime(0.11, start);
 
       gain.gain.setValueAtTime(0.0001, start);
-      gain.gain.linearRampToValueAtTime(0.32, start + 0.018);
+      gain.gain.linearRampToValueAtTime(0.26, start + 0.022);
       gain.gain.exponentialRampToValueAtTime(0.0008, start + dur);
 
       osc1.connect(gain);
@@ -234,43 +242,39 @@
     playBell(659.25, now + 0.42, 1.55); // Dong (E5)
   }
 
-  // 機械翻牌清脆啪嗒聲（結合葉片噪音與中頻共鳴，手機與電視喇叭皆清晰可聞）
+  // 款式 C2：復古翻頁鐘・慢速絲絨軟葉片（64ms 間隔、溫潤「嘩～嘩～」軟頁刷動聲）
   function playFlapTick() {
     if (!soundOn || !audioCtx) return;
     const nowMs = performance.now();
-    if (nowMs - lastTickTime < 26) return; // 每 26ms 最多響一次，形成「喀啦啦啦」機械翻牌節奏
+    if (nowMs - lastTickTime < 64) return; // C2 慢速柔和間隔（64ms）
     lastTickTime = nowMs;
     ensureAudio();
+    if (!pinkBuf) return;
+
     const now = audioCtx.currentTime;
+    const src = audioCtx.createBufferSource();
+    src.buffer = pinkBuf;
+    const offset = Math.random() * 0.12;
 
-    // 1. 塑膠字牌拍擊聲（Bandpass 濾波白噪音 1300~2200Hz，手機喇叭最清楚的頻段）
-    if (flapNoiseBuf) {
-      const src = audioCtx.createBufferSource();
-      src.buffer = flapNoiseBuf;
-      const filter = audioCtx.createBiquadFilter();
-      filter.type = 'bandpass';
-      filter.frequency.setValueAtTime(1400 + Math.random() * 500, now);
-      filter.Q.setValueAtTime(1.8, now);
-      const nGain = audioCtx.createGain();
-      nGain.gain.setValueAtTime(0.35, now);
-      src.connect(filter);
-      filter.connect(nGain);
-      nGain.connect(audioCtx.destination);
-      src.start(now);
-    }
+    const filter = audioCtx.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.frequency.setValueAtTime(610 + Math.random() * 170, now);
+    filter.Q.setValueAtTime(0.68, now);
 
-    // 2. 轉軸機械短促敲擊音（720Hz -> 180Hz）
-    const osc = audioCtx.createOscillator();
+    const lp = audioCtx.createBiquadFilter();
+    lp.type = 'lowpass';
+    lp.frequency.setValueAtTime(1240, now);
+
     const gain = audioCtx.createGain();
-    osc.type = 'triangle';
-    osc.frequency.setValueAtTime(680 + Math.random() * 160, now);
-    osc.frequency.exponentialRampToValueAtTime(170, now + 0.018);
-    gain.gain.setValueAtTime(0.18, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.018);
-    osc.connect(gain);
+    gain.gain.setValueAtTime(0.0005, now);
+    gain.gain.linearRampToValueAtTime(0.27, now + 0.014); // 14ms 柔和漸入，無硬質敲擊音
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.078);
+
+    src.connect(filter);
+    filter.connect(lp);
+    lp.connect(gain);
     gain.connect(audioCtx.destination);
-    osc.start(now);
-    osc.stop(now + 0.02);
+    src.start(now, offset, 0.082);
   }
 
   $('soundBtn').addEventListener('click', () => {
@@ -281,11 +285,11 @@
     btn.textContent = soundOn ? '🔊 廣播音效開啟' : '🔇 點擊啟用音效';
     if (soundOn) {
       playChime(); // 立即試播叮咚廣播聲
-      // 接著立刻翻動第一列（若尚無留言則翻動時鐘），讓使用者當場聽到「叮咚＋喀啦啦翻牌聲」
+      // 接著立刻翻動第一列（若尚無留言則翻動時鐘），讓使用者當場聽到「叮咚＋C2 柔和翻頁聲」
       setTimeout(() => {
         const firstRow = board.querySelector('.row');
         if (firstRow) spinRow(firstRow);
-        else clockTiles.forEach((el, i) => spinTo(el, el.cur || '0', i * 45, 5));
+        else clockTiles.forEach((el, i) => spinTo(el, el.cur || '0', i * 60, 5));
       }, 350);
     }
   });
@@ -352,7 +356,7 @@
     return wrap;
   }
   function spinRow(row) {
-    row.querySelectorAll('.flap').forEach((el, i) => spinTo(el, el.dataset.final, i * 35, 3 + (i % 10) + Math.floor(Math.random() * 3)));
+    row.querySelectorAll('.flap').forEach((el, i) => spinTo(el, el.dataset.final, i * 45, 3 + (i % 6) + Math.floor(Math.random() * 2)));
   }
 
   const flightNo = m => (m.love ? 'LV' : 'TY') + '-' + String(m.id - 1).padStart(3, '0');
