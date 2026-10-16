@@ -3,6 +3,9 @@
 *.zip
 設定步驟.md
 Code.gs
+.clasp.json
+.claspignore
+appsscript.json
 
 # 原始桌布檔（已整理至 wallpapers/ 資料夾）
 1_0.jpg
