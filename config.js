@@ -7,3 +7,7 @@ window.COUNSEL_URL = 'https://myfcu.fcu.edu.tw/main/webClientMyFcuMain.aspx#!/pr
 
 // 探心知己社 IG 連結（報到完成頁底部會出現「追蹤探心知己社 IG」按鈕）
 window.IG_URL = 'https://www.instagram.com/fcu_sdt/';
+
+// Cloudflare Turnstile 真人驗證的 Site Key（公開金鑰，可以放在這裡；Secret Key 絕對不要放這裡）
+// 留空 = 不顯示驗證。填了之後，Apps Script 的指令碼屬性也要設定 TURNSTILE_SECRET，兩邊要成對
+window.TURNSTILE_SITEKEY = '0x4AAAAAAFa3tGT17N1X1P4I';

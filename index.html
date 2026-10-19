@@ -94,6 +94,8 @@
   .go:focus-visible { outline: 3px solid var(--sign); outline-offset: 3px; }
   .err { color: var(--danger); font-size: 14px; font-weight: 700; text-align: center; min-height: 1em; }
   .hint { font-size: 12px; color: var(--ink-2); text-align: center; line-height: 1.6; }
+  .ts { display: flex; justify-content: center; }
+  .ts:empty { display: none; }
 
   /* 報到完成與印章 */
   .done { display: flex; flex-direction: column; gap: 14px; align-items: center; text-align: center; position: relative; }
@@ -207,6 +209,7 @@
     <div class="tear" aria-hidden="true"></div>
 
     <div class="stub" id="stub">
+      <div class="ts" id="ts"></div>
       <button class="go" id="go" type="submit" disabled>完成報到 <span>CHECK IN</span></button>
       <div class="err" id="err" role="alert"></div>
       <div class="hint">不記名。你的真心話會以航班的形式出現在攤位的大螢幕上。</div>
@@ -259,6 +262,35 @@
   let MAX = 20, TO_MAX = 4;
   let COUNSEL = /^https?:\/\//.test(window.COUNSEL_URL || '') ? window.COUNSEL_URL.trim() : '';
   let IG_URL = /^https?:\/\//.test(window.IG_URL || '') ? window.IG_URL.trim() : '';
+
+  // ===== Cloudflare Turnstile 真人驗證（config.js 有填 Site Key 才啟用）=====
+  // interaction-only：多數人完全看不到，只有可疑時才會跳出勾選框。權杖只能用一次，每次送出後都要重置
+  const TS_KEY = String(window.TURNSTILE_SITEKEY || '').trim();
+  const NEED_TS = LIVE && !!TS_KEY;
+  let tsId = null, tsToken = '', tsErr = '';
+  if (NEED_TS) {
+    window.onTsLoad = () => {
+      tsId = turnstile.render('#ts', {
+        sitekey: TS_KEY,
+        action: 'checkin',               // 要和 Code.gs 的 CONFIG.TURNSTILE_ACTION 一致
+        appearance: 'interaction-only',
+        size: 'flexible',
+        language: 'zh-tw',
+        callback: t => { tsToken = t; tsErr = ''; refresh(); },
+        'expired-callback': () => { tsToken = ''; refresh(); },
+        'error-callback': () => { tsToken = ''; tsErr = '真人驗證載入失敗，請重新整理頁面'; refresh(); },
+      });
+    };
+    const s = document.createElement('script');
+    s.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=onTsLoad';
+    s.async = true;
+    s.onerror = () => { tsErr = '真人驗證載入失敗，請檢查網路後重新整理'; refresh(); };
+    document.head.appendChild(s);
+  }
+  function resetTs() {
+    tsToken = '';
+    if (tsId !== null && window.turnstile) turnstile.reset(tsId);
+  }
 
   // ===== 專屬手機桌布清單 =====
   const WALLPAPERS = [
@@ -367,8 +399,10 @@
     let err = '';
     if (m > TO_MAX) err = '「前往」最多 ' + TO_MAX + ' 個字';
     else if (n > MAX) err = '短句最多 ' + MAX + ' 個字，再精簡一點';
+    else if (NEED_TS && tsErr) err = tsErr;
+    else if (NEED_TS && !tsToken && n && m && !sending) err = '正在確認你是真人旅客⋯';
     $('err').textContent = err;
-    go.disabled = sending || !n || !m || !!err;
+    go.disabled = sending || !n || !m || !!err || (NEED_TS && !tsToken);
   }
   [to, text].forEach(el => el.addEventListener('input', refresh));
   pass.querySelectorAll('input[name="type"]').forEach(el => el.addEventListener('change', refresh));
@@ -381,6 +415,7 @@
     sending = true; refresh();
     go.firstChild.textContent = '報到中⋯ ';
     const data = { type: type(), to: to.value.trim(), text: text.value.trim() };
+    if (NEED_TS) data.token = tsToken;
     if (LIVE) {
       // 不設 Content-Type（預設 text/plain），瀏覽器就不會先發預檢請求，Apps Script 才收得到
       fetch(API, { method: 'POST', body: JSON.stringify(data) })
@@ -399,6 +434,7 @@
   });
 
   function fail(err) {
+    resetTs();   // 權杖只能用一次，不論成功失敗都要換新的
     sending = false;
     go.firstChild.textContent = '完成報到 ';
     refresh();
@@ -406,18 +442,21 @@
   }
 
   function done(res) {
+    resetTs();
     sending = false;
+    // 航班號只接受 TY-123 / LV-123 這種格式，避免伺服器回應被竄改時插入 HTML
+    const flight = /^(TY|LV)-\d{1,6}$/.test(String(res.flight)) ? res.flight : '---';
     pass.classList.add('checked');
-    $('flight').textContent = res.flight;
+    $('flight').textContent = flight;
     [to, text].forEach(el => el.readOnly = true);
     pass.querySelectorAll('input[name="type"]').forEach(el => el.disabled = true);
     $('stub').hidden = true;
     $('done').hidden = false;
     $('doneMsg').innerHTML = res.care
-      ? '你的航班 <b>' + res.flight + '</b> 已完成報到。'
+      ? '你的航班 <b>' + flight + '</b> 已完成報到。'
       : res.pending
-      ? '你的航班 <b>' + res.flight + '</b> 已完成報到。<br>志工確認後就會出現在大螢幕上，記得抬頭找找看。'
-      : '你的航班 <b>' + res.flight + '</b> 已完成報到。<br>現在抬頭看看大螢幕吧。';
+      ? '你的航班 <b>' + flight + '</b> 已完成報到。<br>志工確認後就會出現在大螢幕上，記得抬頭找找看。'
+      : '你的航班 <b>' + flight + '</b> 已完成報到。<br>現在抬頭看看大螢幕吧。';
 
     // 只有需要關懷的特殊留言（res.care === true）才會顯示諮商中心初談關心提醒
     if (res.care) {
