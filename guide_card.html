@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft JhengHei", "PingFang TC", sans-serif;
+    background: #f8fafc;
+    color: #1e293b;
+    padding: 24px;
+    width: 1240px;
+    margin: 0 auto;
+  }
+  .header {
+    background: linear-gradient(135deg, #1e3a8a 0%, #0284c7 100%);
+    color: white;
+    padding: 22px 30px;
+    border-radius: 14px;
+    box-shadow: 0 4px 12px rgba(2, 132, 199, 0.18);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+  .header h1 {
+    font-size: 26px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .header p {
+    font-size: 14px;
+    opacity: 0.92;
+    margin-top: 4px;
+  }
+  .header .badge {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: 1.15fr 0.85fr;
+    gap: 20px;
+  }
+  .col-full {
+    grid-column: 1 / -1;
+  }
+
+  .card {
+    background: #ffffff;
+    border-radius: 14px;
+    padding: 20px 24px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.04);
+    border: 1px solid #e2e8f0;
+  }
+  .card-title {
+    font-size: 17px;
+    font-weight: 700;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 14px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #f1f5f9;
+  }
+
+  /* Priority bar */
+  .priority-bar {
+    background: #f1f5f9;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    font-weight: 700;
+    font-size: 14px;
+    margin-bottom: 16px;
+  }
+
+  .decision-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 16px;
+  }
+  .decision-card {
+    border-radius: 10px;
+    padding: 14px 16px;
+    border: 1.5px solid;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .decision-card.reject {
+    background: #fef2f2;
+    border-color: #f87171;
+    color: #991b1b;
+  }
+  .decision-card.approve {
+    background: #f0fdf4;
+    border-color: #4ade80;
+    color: #166534;
+  }
+  .decision-card.auto {
+    background: #f0f9ff;
+    border-color: #38bdf8;
+    color: #075985;
+  }
+  .decision-title {
+    font-size: 15px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .decision-desc {
+    font-size: 13px;
+    line-height: 1.55;
+  }
+
+  /* Table styling */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13.5px;
+  }
+  th {
+    background: #f8fafc;
+    color: #475569;
+    font-weight: 700;
+    text-align: left;
+    padding: 10px 12px;
+    border-bottom: 2px solid #e2e8f0;
+  }
+  td {
+    padding: 11px 12px;
+    border-bottom: 1px solid #f1f5f9;
+    vertical-align: top;
+    line-height: 1.5;
+  }
+  tr:last-child td { border-bottom: none; }
+
+  .badge-tag {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 5px;
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  .tag-red { background: #fee2e2; color: #dc2626; border: 1px solid #fca5a5; }
+  .tag-green { background: #dcfce7; color: #16a34a; border: 1px solid #86efac; }
+  .tag-yellow { background: #fef3c7; color: #d97706; border: 1px solid #fde68a; }
+  .tag-blue { background: #e0f2fe; color: #0284c7; border: 1px solid #bae6fd; }
+
+  .row-red { background: #fef2f2; }
+  .row-yellow { background: #fffbeb; }
+
+  /* FAQ */
+  .faq-item {
+    margin-bottom: 12px;
+    padding-bottom: 12px;
+    border-bottom: 1px dashed #e2e8f0;
+  }
+  .faq-item:last-child {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+  }
+  .faq-q {
+    font-weight: 700;
+    font-size: 13.5px;
+    color: #0f172a;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+  }
+  .faq-a {
+    font-size: 13px;
+    color: #475569;
+    padding-left: 22px;
+    line-height: 1.5;
+  }
+
+  .footer {
+    margin-top: 18px;
+    text-align: center;
+    font-size: 12.5px;
+    color: #64748b;
+    padding: 10px;
+    background: #ffffff;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+  }
+</style>
+</head>
+<body>
+
+  <div class="header">
+    <div>
+      <h1>✈️ 候機室的真心話｜電子看板審核與值班操作手冊</h1>
+      <p>現場值班志工與同仁專用・3 秒掌握「留言、審核、通過與撤下」判斷準則</p>
+    </div>
+    <div class="badge">擺攤現場備查指南</div>
+  </div>
+
+  <div class="card col-full" style="margin-bottom: 20px;">
+    <div class="card-title">
+      <span>🎯 審核優先權與決策邏輯（依序判斷）</span>
+    </div>
+
+    <div class="priority-bar">
+      <span>🥇 【第一優先】「撤下」有勾 ➔ 強制下架</span>
+      <span style="color: #94a3b8;">▶</span>
+      <span>🥈 【第二優先】「通過」有勾 ➔ 強制放行</span>
+      <span style="color: #94a3b8;">▶</span>
+      <span>🥉 【第三順位】兩者未勾 ➔ 系統自動過濾</span>
+    </div>
+
+    <div class="decision-grid">
+      <!-- 情況 1 -->
+      <div class="decision-card reject">
+        <div>
+          <div class="decision-title">
+            <span>🚫 情況一：「撤下」打勾</span>
+          </div>
+          <div class="decision-desc" style="margin-top: 8px;">
+            <strong>【最高否決權・強制下架】</strong><br>
+            只要此欄打勾，不論「通過」是否有勾或系統判斷為何，大螢幕約 4 秒內立刻下架，永不上板！
+          </div>
+        </div>
+        <div>
+          <span class="badge-tag tag-red">適用：學生反悔 / 惡意攻擊 / 洩漏個資</span>
+        </div>
+      </div>
+
+      <!-- 情況 2 -->
+      <div class="decision-card approve">
+        <div>
+          <div class="decision-title">
+            <span>✅ 情況二：「通過」打勾</span>
+          </div>
+          <div class="decision-desc" style="margin-top: 8px;">
+            <strong>【最高放行權・人工核准】</strong><br>
+            代表志工已確認無疑慮。可覆蓋系統規則與 AI 誤擋，強制直接上板播放！
+          </div>
+        </div>
+        <div>
+          <span class="badge-tag tag-green">適用：黃底誤判 / 經評估無自傷風險</span>
+        </div>
+      </div>
+
+      <!-- 情況 3 -->
+      <div class="decision-card auto">
+        <div>
+          <div class="decision-title">
+            <span>🤖 情況三：兩者皆未勾</span>
+          </div>
+          <div class="decision-desc" style="margin-top: 8px;">
+            <strong>【系統自動判斷（預設狀態）】</strong><br>
+            • <b>⬜ 白底</b>：正常留言，系統秒級自動上板輪播。<br>
+            • <b>🟨 黃底 / 🟥 紅底</b>：暫不上板，等待志工確認。
+          </div>
+        </div>
+        <div>
+          <span class="badge-tag tag-blue">新送出留言之預設初始狀態</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid">
+    <!-- Left: Color status table -->
+    <div class="card">
+      <div class="card-title">
+        <span>🎨 試算表底色標註與應對 SOP</span>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th style="width: 22%;">底色標註</th>
+            <th style="width: 28%;">系統狀態文字</th>
+            <th>志工值班應對動作</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <span class="badge-tag" style="background:#f1f5f9; border:1px solid #cbd5e1; color:#334155;">⬜ 白底</span>
+            </td>
+            <td><strong>✅ 正常上板</strong></td>
+            <td><strong>【無需動作】</strong>系統已自動排入大螢幕輪播。偶爾巡視是否有漏網不雅詞即可。</td>
+          </tr>
+          <tr class="row-yellow">
+            <td>
+              <span class="badge-tag tag-yellow">🟨 黃底</span>
+            </td>
+            <td><strong>⚠️ 待確認</strong></td>
+            <td><strong>【志工人工確認】：</strong><br>
+            • 屬正常抒發（如「我想死你了」被誤判）：請勾選【通過】放行上板。<br>
+            • 確為不雅或嘲諷：請保持不勾或勾【撤下】。</td>
+          </tr>
+          <tr class="row-red">
+            <td>
+              <span class="badge-tag tag-red">🟥 紅底</span>
+            </td>
+            <td><strong>🚨 需要關懷</strong></td>
+            <td><strong>【請通知現場心理師 / 專職人員】：</strong><br>
+            • 含自傷或高度關懷意向（學生手機已跳出初談預約）。<br>
+            • ⚠️ <strong>志工切勿自行勾通過</strong>，待專業人員評估處理。</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Right: FAQ -->
+    <div class="card">
+      <div class="card-title">
+        <span>💡 值班常客訴與突發狀況處理 FAQ</span>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">❓ Q1. 學生跑來攤位說「我剛剛打錯了／想撤下」怎麼辦？</div>
+        <div class="faq-a">👉 找到該筆留言列，在【撤下】欄打勾，大螢幕約 4 秒內就會強制消失。</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">❓ Q2. 如果不小心「通過」和「撤下」都被打勾了，看板會播嗎？</div>
+        <div class="faq-a">👉 絕對不會！【撤下】擁有最高否決權，只要「撤下」有勾就一律下架。</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">❓ Q3. 留言明明很正面，為什麼變成黃色一直沒上螢幕？</div>
+        <div class="faq-a">👉 關鍵字或 AI 有疑慮時會主動卡住。志工只要直接勾選【通過】，就能強制放行！</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">❓ Q4. 現場發現有人惡意刷留言洗版怎麼辦？</div>
+        <div class="faq-a">👉 系統已有 Turnstile 真人驗證與頻率限制；若有人現場重複發送，請將洗版的列直接全數勾【撤下】。</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    📌 115-1 生命教育擺攤「候機室的真心話」現場管理小組・本圖可置於 Google 試算表或彩色列印置於值班桌面備查
+  </div>
+
+</body>
+</html>
