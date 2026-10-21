@@ -6,111 +6,423 @@
 <title>登機廣播看板</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Noto+Sans+TC:wght@500;700;900&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Noto+Sans+TC:wght@500;700;900&display=swap">
 <style>
-  /* 版面：機場出境翻牌看板。深色機殼＋翻牌字格，黃色是機場標誌色，只用在標題、狀態、廣播條 */
+  /* 版面：機場出境機械翻牌看板（FIDS）。經典深黑霧面金屬機殼＋內凹深色字槽＋機場黃（#f5c518）標誌燈號 */
   :root {
-    --case: #0c0d0f;       /* 機殼 */
-    --row: #121316;        /* 列底色 */
-    --row-alt: #15171a;
-    --tile-hi: #2a2c31;    /* 字格上半 */
-    --tile-lo: #202226;    /* 字格下半 */
-    --ink: #f1ede3;        /* 字格文字（暖白） */
-    --muted: #7c7f87;
-    --sign: #f5c518;       /* 機場黃 */
-    --ty: #5ccf9c;         /* 道謝 */
-    --lv: #ff86a6;         /* 道愛 */
+    --case: #0c0d0f;       /* 機殼主色：深炭黑霧面烤漆 */
+    --case-hi: #16181d;    /* 機殼上緣環境微反光 */
+    --case-lo: #08090b;    /* 機殼下緣深影 */
+    --well: #090a0c;       /* 翻牌區內凹深槽 */
+    --row: #121316;        /* 單數列底槽 */
+    --row-alt: #16181c;    /* 雙數列底槽 */
+    --tile-hi: #2a2c31;    /* 字格上半葉片 */
+    --tile-mid: #222429;   /* 字格上半漸層底 */
+    --tile-lo: #202226;    /* 字格下半葉片 */
+    --tile-bot: #181a1e;   /* 字格下半漸層底 */
+    --hinge: #070809;      /* 轉軸中縫深槽 */
+    --pin: #3e4149;        /* 轉軸兩側金屬卡榫 */
+    --ink: #f1ede3;        /* 字格文字（暖白高對比） */
+    --muted: #7c7f87;      /* 次要指標文字（霧灰） */
+    --sign: #f5c518;       /* 機場黃（標題、狀態閃燈、底部廣播條） */
+    --ty: #5ccf9c;         /* 道謝 TY（薄荷綠） */
+    --lv: #ff86a6;         /* 道愛 LV（櫻花粉） */
     --font-zh: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
     --font-sign: "Barlow Condensed", "Arial Narrow", "Roboto Condensed", sans-serif;
     color-scheme: dark;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  html, body { height: 100%; background: var(--case); color: var(--ink); font-family: var(--font-zh); overflow: hidden; }
-  body { display: flex; flex-direction: column; }
+  html, body {
+    height: 100%;
+    background: var(--case);
+    color: var(--ink);
+    font-family: var(--font-zh);
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: geometricPrecision;
+  }
+  body {
+    display: flex;
+    flex-direction: column;
+    background: linear-gradient(180deg, var(--case-hi) 0%, var(--case) 18%, var(--case-lo) 100%);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .08);
+  }
 
-  /* ===== 標頭 ===== */
-  header { display: flex; align-items: center; gap: 1.6vw; padding: 1.6vh 2.4vw; }
-  .pict { width: 8.6vh; height: 8.6vh; background: var(--sign); border-radius: .8vh; display: grid; place-items: center; flex: none; }
-  .pict svg { width: 70%; height: 70%; }
+  /* ===== 標頭（航廈燈箱銘牌） ===== */
+  header {
+    display: flex;
+    align-items: center;
+    gap: 1.5vw;
+    padding: 1.5vh 2.4vw;
+    background: linear-gradient(180deg, rgba(255, 255, 255, .03) 0%, rgba(0, 0, 0, .25) 100%);
+    border-bottom: 1px solid #22242a;
+  }
+  .pict {
+    width: 8.4vh;
+    height: 8.4vh;
+    background: linear-gradient(180deg, #ffd438 0%, var(--sign) 100%);
+    border-radius: .8vh;
+    border: 1px solid rgba(255, 255, 255, .25);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .45), 0 .4vh 1vh rgba(0, 0, 0, .5);
+    display: grid;
+    place-items: center;
+    flex: none;
+  }
+  .pict svg { width: 68%; height: 68%; }
   .title { display: flex; flex-direction: column; line-height: 1; }
-  .title .zh { font-size: 5.6vh; font-weight: 900; color: var(--sign); letter-spacing: .12em; }
-  .title .en { font-family: var(--font-sign); font-size: 2.9vh; font-weight: 600; color: var(--sign); letter-spacing: .32em; text-transform: uppercase; margin-top: .6vh; }
-  .event { margin-left: 1.4vw; padding-left: 1.6vw; border-left: 2px solid #2a2c31; line-height: 1.35; }
-  .event b { display: block; font-size: 2.9vh; font-weight: 700; letter-spacing: .08em; }
-  .event span { font-size: 1.9vh; color: var(--muted); letter-spacing: .2em; }
+  .title .zh {
+    font-size: 5.5vh;
+    font-weight: 900;
+    color: var(--sign);
+    letter-spacing: .12em;
+    text-shadow: 0 2px 6px rgba(0, 0, 0, .45);
+  }
+  .title .en {
+    font-family: var(--font-sign);
+    font-size: 2.7vh;
+    font-weight: 700;
+    color: var(--sign);
+    letter-spacing: .3em;
+    text-transform: uppercase;
+    margin-top: .5vh;
+  }
+  .event {
+    margin-left: 1.2vw;
+    padding-left: 1.6vw;
+    border-left: 2px solid #2a2c31;
+    line-height: 1.32;
+  }
+  .event b {
+    display: block;
+    font-size: 2.85vh;
+    font-weight: 900;
+    color: var(--ink);
+    letter-spacing: .08em;
+  }
+  .event span {
+    display: block;
+    font-family: var(--font-sign), var(--font-zh);
+    font-size: 1.85vh;
+    font-weight: 700;
+    color: var(--muted);
+    letter-spacing: .2em;
+    margin-top: .2vh;
+  }
   .clockbox { margin-left: auto; display: flex; align-items: center; gap: 1.2vw; }
-  .sound-btn { background: #1c1e22; color: var(--sign); border: 1.5px solid var(--sign); border-radius: .8vh;
-    padding: .9vh 1.2vw; font: 700 2vh var(--font-zh); letter-spacing: .08em; cursor: pointer;
-    display: flex; align-items: center; gap: .5vw; white-space: nowrap; transition: background .2s, color .2s, border-color .2s; }
-  .sound-btn.on { background: #17191d; color: var(--ink); border-color: #2f3238; }
+  .sound-btn {
+    background: #1c1e22;
+    color: var(--sign);
+    border: 1.5px solid var(--sign);
+    border-radius: .7vh;
+    padding: .85vh 1.15vw;
+    font: 700 1.95vh var(--font-zh);
+    letter-spacing: .08em;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: .5vw;
+    white-space: nowrap;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, .35);
+    transition: background .2s, color .2s, border-color .2s, transform .12s;
+  }
+  .sound-btn.on {
+    background: #17191d;
+    color: var(--ink);
+    border-color: #2f3238;
+  }
   .sound-btn:hover { border-color: var(--sign); }
-  .date { text-align: right; font-family: var(--font-sign); color: var(--muted); font-size: 2.3vh; letter-spacing: .12em; line-height: 1.3; }
-  .date b { display: block; color: var(--ink); font-size: 2.8vh; font-weight: 600; }
-  #clock { --ch: 7.2vh; }
+  .sound-btn:active { transform: scale(.98); }
+  .date {
+    text-align: right;
+    font-family: var(--font-sign);
+    color: var(--muted);
+    font-size: 2.2vh;
+    font-weight: 600;
+    letter-spacing: .14em;
+    line-height: 1.2;
+    font-variant-numeric: tabular-nums;
+  }
+  .date b {
+    display: block;
+    color: var(--ink);
+    font-size: 2.9vh;
+    font-weight: 700;
+    letter-spacing: .1em;
+  }
+  #clock { --ch: 7.0vh; }
 
-  /* ===== 欄位標題 ===== */
-  .grid { display: grid; grid-template-columns: var(--c-flight) var(--c-to) var(--c-msg) 1fr; column-gap: var(--col-gap); align-items: center; }
-  .colhead { padding: .9vh 2.4vw; background: #17181b; border-block: 1px solid #25272b; }
-  .colhead div { line-height: 1.15; }
-  .colhead b { display: block; font-size: 2.1vh; font-weight: 700; color: var(--ink); letter-spacing: .3em; }
-  .colhead span { font-family: var(--font-sign); font-size: 1.6vh; font-weight: 600; color: var(--muted); letter-spacing: .28em; }
-  .colhead .right { text-align: right; }
+  /* ===== 欄位標題（工業銘牌橫條） ===== */
+  .grid {
+    display: grid;
+    grid-template-columns: var(--c-flight) var(--c-to) var(--c-msg) 1fr;
+    column-gap: var(--col-gap);
+    align-items: center;
+  }
+  .colhead {
+    padding: .85vh 2.4vw;
+    background: #17181b;
+    border-top: 1px solid rgba(255, 255, 255, .07);
+    border-bottom: 2px solid #090a0c;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, .35);
+    z-index: 2;
+  }
+  .colhead div {
+    display: flex;
+    align-items: baseline;
+    gap: .55vw;
+    line-height: 1.1;
+  }
+  .colhead b {
+    font-size: 2.05vh;
+    font-weight: 900;
+    color: var(--ink);
+    letter-spacing: .24em;
+  }
+  .colhead span {
+    font-family: var(--font-sign);
+    font-size: 1.75vh;
+    font-weight: 700;
+    color: var(--muted);
+    letter-spacing: .24em;
+  }
+  .colhead .right { justify-content: flex-end; text-align: right; }
 
-  /* ===== 看板 ===== */
-  main { flex: 1; padding: 0 2.4vw; overflow: hidden; }
-  .row { height: var(--row-h); padding-block: calc(var(--row-h) * .09); background: var(--row); overflow: hidden; }
+  /* ===== 看板內凹字槽 ===== */
+  main {
+    flex: 1;
+    margin: .9vh 1.6vw;
+    padding: 0 .8vw;
+    background: var(--well);
+    border-radius: .9vh;
+    border: 1.5px solid #25272d;
+    box-shadow: inset 0 3px 10px rgba(0, 0, 0, .8), 0 1px 0 rgba(255, 255, 255, .05);
+    overflow: hidden;
+  }
+  .row {
+    height: var(--row-h);
+    padding-block: calc(var(--row-h) * .08);
+    padding-inline: .6vw;
+    background: var(--row);
+    border-top: 1px solid rgba(255, 255, 255, .03);
+    border-bottom: 1px solid rgba(0, 0, 0, .75);
+    overflow: hidden;
+  }
   .row:nth-child(even) { background: var(--row-alt); }
-  .row.slide { animation: slide .45s ease-out both; }
-  @keyframes slide { from { height: 0; padding-block: 0; } }
+  .row.slide { animation: slide .42s cubic-bezier(.22, 1, .36, 1) both; }
+  @keyframes slide { from { height: 0; padding-block: 0; opacity: 0; } }
 
-  /* 翻牌字格：上半＋下半，中間一道轉軸縫 */
+  /* ===== 翻牌字格：上半＋下半，中軸金屬卡榫，中英數基線對齊 ===== */
   .flaps { display: flex; gap: calc(var(--ch) * .07); }
-  .flap { position: relative; width: calc(var(--ch) * .8); height: var(--ch); perspective: calc(var(--ch) * 6);
-    font-size: calc(var(--ch) * .66); font-weight: 700; color: var(--ink); border-radius: calc(var(--ch) * .08);
-    box-shadow: 0 calc(var(--ch) * .04) calc(var(--ch) * .06) rgba(0, 0, 0, .6); }
-  .flap.n { width: calc(var(--ch) * .56); font-family: var(--font-sign); font-size: calc(var(--ch) * .8); font-weight: 600; }
-  .flap.blank { opacity: .5; }
-  .h { position: absolute; left: 0; right: 0; height: 50%; overflow: hidden; backface-visibility: hidden; }
-  .h b { position: absolute; left: 0; right: 0; height: 200%; display: flex; align-items: center; justify-content: center; font-weight: inherit; }
-  .up, .lu { top: 0; background: linear-gradient(var(--tile-hi), #25272b); border-radius: calc(var(--ch) * .08) calc(var(--ch) * .08) 0 0; transform-origin: 50% 100%; }
-  .lo, .ll { bottom: 0; background: linear-gradient(var(--tile-lo), #1b1d20); border-radius: 0 0 calc(var(--ch) * .08) calc(var(--ch) * .08); transform-origin: 50% 0; }
+  .flap {
+    position: relative;
+    width: calc(var(--ch) * .8);
+    height: var(--ch);
+    perspective: calc(var(--ch) * 6.5);
+    font-family: var(--font-zh);
+    font-size: calc(var(--ch) * .64);
+    font-weight: 900;
+    color: var(--ink);
+    border-radius: calc(var(--ch) * .08);
+    box-shadow:
+      0 calc(var(--ch) * .05) calc(var(--ch) * .08) rgba(0, 0, 0, .72),
+      0 0 0 1px rgba(0, 0, 0, .85);
+    user-select: none;
+  }
+  /* 窄格（航班號、時鐘）：Barlow Condensed 等寬工業窄體，與中文方正黑體框高一致 */
+  .flap.n {
+    width: calc(var(--ch) * .56);
+    font-family: var(--font-sign);
+    font-size: calc(var(--ch) * .78);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0;
+  }
+  .flap.blank { opacity: .48; }
+  .h {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 50%;
+    overflow: hidden;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+  }
+  .h b {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 200%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: inherit;
+    line-height: 1;
+    /* 光學置中微調：讓繁體漢字與英數重心落在轉軸線上 */
+    transform: translateY(-1%);
+  }
+  .flap.n .h b {
+    transform: translateY(0%);
+  }
+  .up, .lu {
+    top: 0;
+    background: linear-gradient(180deg, var(--tile-hi) 0%, var(--tile-mid) 100%);
+    border-radius: calc(var(--ch) * .08) calc(var(--ch) * .08) 0 0;
+    border-top: 1px solid rgba(255, 255, 255, .12);
+    transform-origin: 50% 100%;
+  }
+  .lo, .ll {
+    bottom: 0;
+    background: linear-gradient(180deg, var(--tile-lo) 0%, var(--tile-bot) 100%);
+    border-radius: 0 0 calc(var(--ch) * .08) calc(var(--ch) * .08);
+    border-bottom: 1px solid rgba(0, 0, 0, .45);
+    transform-origin: 50% 0%;
+  }
   .lo b, .ll b { top: -100%; }
-  .flap::after { content: ""; position: absolute; left: 0; right: 0; top: calc(50% - 1px); height: 2px; background: var(--case); z-index: 3; }
-  .flap::before { content: ""; position: absolute; top: calc(50% - 3px); left: -1px; width: 3px; height: 6px; background: #3a3c42; border-radius: 1px; z-index: 4; }
-  .lu, .ll { display: none; z-index: 2; }
-  .go .lu { display: block; animation: fallTop var(--d) ease-in both; background: linear-gradient(var(--tile-hi), #1e2023); }
-  .go .ll { display: block; animation: fallBot var(--d) ease-out var(--d) both; }
-  @keyframes fallTop { to { transform: rotateX(-90deg); } }
-  @keyframes fallBot { from { transform: rotateX(90deg); } }
+  /* 轉軸中縫與左右金屬軸銷 */
+  .flap::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: calc(50% - 1px);
+    height: 2px;
+    background: var(--hinge);
+    z-index: 4;
+  }
+  .flap::before {
+    content: "";
+    position: absolute;
+    top: calc(50% - 3px);
+    left: -1px;
+    width: 3px;
+    height: 6px;
+    background: var(--pin);
+    border-radius: 1px;
+    box-shadow: calc(var(--w-tile, var(--ch) * .8) - 1px) 0 0 var(--pin);
+    z-index: 5;
+  }
+  .flap.n::before {
+    box-shadow: calc(var(--ch) * .56 - 1px) 0 0 var(--pin);
+  }
+  .lu, .ll {
+    display: none;
+    z-index: 3;
+    will-change: transform, filter;
+  }
 
-  .flight .flap { color: var(--c); }
-  .to .flap { color: var(--c); }
-  .ty { --c: var(--ty); } .lv { --c: var(--lv); }
+  .flight .flap, .to .flap { color: var(--c); }
+  .ty { --c: var(--ty); }
+  .lv { --c: var(--lv); }
 
-  .status { justify-self: end; display: flex; flex-direction: column; align-items: flex-end; line-height: 1.1; white-space: nowrap; }
-  .status b { font-size: calc(var(--row-h) * .42); font-weight: 700; color: var(--muted); letter-spacing: .12em; }
-  .status span { font-family: var(--font-sign); font-size: calc(var(--row-h) * .26); font-weight: 600; color: var(--muted); letter-spacing: .24em; }
+  /* ===== 狀態欄 ===== */
+  .status {
+    justify-self: end;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    line-height: 1.08;
+    white-space: nowrap;
+  }
+  .status b {
+    font-size: calc(var(--row-h) * .40);
+    font-weight: 900;
+    color: var(--muted);
+    letter-spacing: .12em;
+  }
+  .status span {
+    font-family: var(--font-sign);
+    font-size: calc(var(--row-h) * .26);
+    font-weight: 700;
+    color: var(--muted);
+    letter-spacing: .24em;
+  }
   .status.boarding b, .status.boarding span { color: var(--sign); }
-  .status.boarding b::before { content: ""; display: inline-block; width: .55em; height: .55em; border-radius: 50%; background: var(--sign);
-    margin-right: .45em; vertical-align: .08em; animation: blink .9s ease-in-out infinite alternate; }
-  .status.boarding { animation: glow .9s ease-in-out infinite alternate; }
-  @keyframes blink { to { opacity: .15; } }
-  @keyframes glow { to { opacity: .55; } }
+  .status.boarding b::before {
+    content: "";
+    display: inline-block;
+    width: .52em;
+    height: .52em;
+    border-radius: 50%;
+    background: var(--sign);
+    box-shadow: 0 0 8px var(--sign);
+    margin-right: .45em;
+    vertical-align: .08em;
+    animation: blink .85s ease-in-out infinite alternate;
+  }
+  .status.boarding { animation: glow .85s ease-in-out infinite alternate; }
+  @keyframes blink { to { opacity: .2; } }
+  @keyframes glow { to { opacity: .65; } }
 
-  .empty { color: var(--muted); font-size: 3.2vh; padding: 10vh 0; text-align: center; letter-spacing: .15em; }
+  .empty {
+    color: var(--muted);
+    font-size: 3.0vh;
+    font-weight: 700;
+    padding: 12vh 0;
+    text-align: center;
+    letter-spacing: .16em;
+  }
 
-  /* ===== 底部廣播跑馬燈 ===== */
-  footer { display: flex; align-items: stretch; height: 7vh; background: var(--sign); color: #111; }
-  .onair { flex: none; display: flex; align-items: center; gap: .6vw; padding: 0 1.6vw; background: #111; color: var(--sign);
-    font-family: var(--font-sign); font-size: 2.4vh; font-weight: 700; letter-spacing: .25em; }
-  .ticker { flex: 1; overflow: hidden; display: flex; align-items: center; min-width: 0; }
-  .ticker-track { display: flex; white-space: nowrap; animation: tick 48s linear infinite; }
-  .ticker-track span { padding-right: 6vw; font-size: 2.7vh; font-weight: 700; letter-spacing: .06em; }
+  /* ===== 底部廣播跑馬燈（經典機場黃警示條） ===== */
+  footer {
+    display: flex;
+    align-items: stretch;
+    height: 6.8vh;
+    background: var(--sign);
+    border-top: 1px solid rgba(255, 255, 255, .25);
+    color: #111;
+  }
+  .onair {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: .5vw;
+    padding: 0 1.6vw;
+    background: #111;
+    color: var(--sign);
+    font-family: var(--font-sign), var(--font-zh);
+    font-size: 2.35vh;
+    font-weight: 700;
+    letter-spacing: .22em;
+    box-shadow: 2px 0 8px rgba(0, 0, 0, .3);
+    z-index: 1;
+  }
+  .ticker {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    min-width: 0;
+  }
+  .ticker-track {
+    display: flex;
+    white-space: nowrap;
+    animation: tick 48s linear infinite;
+  }
+  .ticker-track span {
+    padding-right: 6vw;
+    font-size: 2.6vh;
+    font-weight: 900;
+    color: #111;
+    letter-spacing: .06em;
+  }
   @keyframes tick { to { transform: translateX(-50%); } }
-  .tally { flex: none; display: flex; align-items: center; gap: 1.4vw; padding: 0 2vw; background: #111; color: var(--ink);
-    font-family: var(--font-sign); font-size: 2.4vh; font-weight: 600; letter-spacing: .12em; }
+  .tally {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 1.4vw;
+    padding: 0 2vw;
+    background: #111;
+    color: var(--ink);
+    font-family: var(--font-sign), var(--font-zh);
+    font-size: 2.35vh;
+    font-weight: 700;
+    letter-spacing: .12em;
+    font-variant-numeric: tabular-nums;
+  }
   .tally i { font-style: normal; }
-  .tally .t { color: var(--ty); } .tally .l { color: var(--lv); }
+  .tally .t { color: var(--ty); }
+  .tally .l { color: var(--lv); }
   #offline { color: var(--sign); }
   [hidden] { display: none !important; }
 
@@ -162,7 +474,7 @@
   const INSERT_GAP_MS = 3000;// 多則新訊息同時進來時，每則間隔
   const IDLE_MS = 20000;     // 多久沒有新訊息就開始輪播舊的
   const ROTATE_MS = 7000;    // 輪播間隔
-  const FLIP_MS = 65;        // 翻一片的半程時間（配合 C2 慢速柔和翻頁感）
+  const FLIP_MS = 68;        // 翻一片的半程時間（配合 Web Animations API 合成層與 C2 軟葉片翻頁感）
   const CELLS = { flight: 6, to: 4, msg: 20 };   // 預設值；連上 API 後會自動改成 Code.gs 的 TO_MAX_LEN、MAX_LEN
   const TICKER = [
     '旅客請注意：如果生命只剩最後一週，你最想對誰說話？',
@@ -288,7 +600,7 @@
       // 接著立刻翻動第一列（若尚無留言則翻動時鐘），讓使用者當場聽到「叮咚＋C2 柔和翻頁聲」
       setTimeout(() => {
         const firstRow = board.querySelector('.row');
-        if (firstRow) spinRow(firstRow);
+        if (firstRow) spinRow(firstRow, 0, true);
         else clockTiles.forEach((el, i) => spinTo(el, el.cur || '0', i * 60, 5));
       }, 350);
     }
@@ -299,21 +611,21 @@
     const rowH = board.clientHeight / ROWS;
     const cs = getComputedStyle(board);
     const avail = board.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
-    // 窄格（英數）寬 .56、中文格寬 .8、格距 .07、欄距 1.3 格、狀態欄約 4 格
+    // 窄格（英數）寬 .56、中文格寬 .8、格距 .07、欄距 1.3 格、狀態欄約 4.2 格
     const units = CELLS.flight * .63 + (CELLS.to + CELLS.msg) * .87 + 3 * 1.3 + 4.2;
     const ch = Math.min(rowH * .82, avail / units);
     const w = (n, k) => n * ch * (k + .07) + 'px';
     const s = document.documentElement.style;
     s.setProperty('--row-h', rowH + 'px');
     s.setProperty('--ch', ch + 'px');
+    s.setProperty('--w-tile', (ch * .8) + 'px');
     s.setProperty('--col-gap', ch * 1.3 + 'px');
     s.setProperty('--c-flight', w(CELLS.flight, .56));
     s.setProperty('--c-to', w(CELLS.to, .8));
     s.setProperty('--c-msg', w(CELLS.msg, .8));
-    s.setProperty('--d', FLIP_MS + 'ms');
   }
 
-  // ===== 翻牌 =====
+  // ===== 翻牌（Web Animations API GPU 合成層加速＋物理微回彈＋光影漸變） =====
   const NOISE_ZH = '的一是我你謝愛好想家媽爸室友自己記得吃飯辛苦朋友同學老師永遠陪伴感恩', NOISE_EN = 'ABCDEFGHJKLMNPRSTUVWXYZ0123456789';
   const isNarrow = c => /[\x00-\x7f]/.test(c);
 
@@ -321,27 +633,84 @@
     const el = document.createElement('span');
     el.className = 'flap' + (narrow ? ' n' : '');
     el.innerHTML = '<span class="h up"><b></b></span><span class="h lo"><b></b></span><span class="h lu"><b></b></span><span class="h ll"><b></b></span>';
+    el._nodes = {
+      up: el.children[0].firstChild,
+      lo: el.children[1].firstChild,
+      luWrap: el.children[2],
+      lu: el.children[2].firstChild,
+      llWrap: el.children[3],
+      ll: el.children[3].firstChild
+    };
     el.cur = ' ';
     return el;
   }
+
   function flipTo(el, next, silent) {
-    const [up, lo, lu, ll] = el.querySelectorAll('b');
+    const { up, lo, luWrap, lu, llWrap, ll } = el._nodes;
     const old = el.cur;
     el.cur = next;
-    if (reduce) { up.textContent = lo.textContent = next; return Promise.resolve(); }
+    const dispNext = next === ' ' ? '' : next;
+    const dispOld = old === ' ' ? '' : old;
+    if (reduce || !luWrap.animate) {
+      up.textContent = lo.textContent = dispNext;
+      return Promise.resolve();
+    }
     if (!silent && old !== next) playFlapTick();
-    up.textContent = next; lo.textContent = old; lu.textContent = old; ll.textContent = next;
-    el.classList.remove('go'); void el.offsetWidth; el.classList.add('go');
-    return new Promise(r => setTimeout(() => { lo.textContent = next; el.classList.remove('go'); r(); }, FLIP_MS * 2));
+
+    if (el._a1) el._a1.cancel();
+    if (el._a2) el._a2.cancel();
+
+    up.textContent = dispNext;
+    lo.textContent = dispOld;
+    lu.textContent = dispOld;
+    ll.textContent = dispNext;
+    luWrap.style.display = 'block';
+    llWrap.style.display = 'block';
+
+    // 微隨機抖動（±7%），讓整排翻動具有自然機械差速感
+    const d = FLIP_MS * (0.93 + Math.random() * 0.14);
+
+    // 上半葉片：重力加速下墜，隨角度轉折逐漸變暗
+    el._a1 = luWrap.animate([
+      { transform: 'rotateX(0deg)', filter: 'brightness(1)' },
+      { transform: 'rotateX(-90deg)', filter: 'brightness(0.55)' }
+    ], {
+      duration: d,
+      easing: 'cubic-bezier(0.55, 0.06, 0.85, 0.36)',
+      fill: 'forwards'
+    });
+
+    // 下半葉片：承接展開，落地時帶微小機械卡榫回彈（-4.5deg -> 0deg）
+    el._a2 = llWrap.animate([
+      { transform: 'rotateX(90deg)', filter: 'brightness(0.58)' },
+      { transform: 'rotateX(-4.5deg)', filter: 'brightness(1.06)', offset: 0.82 },
+      { transform: 'rotateX(0deg)', filter: 'brightness(1)' }
+    ], {
+      duration: d * 1.12,
+      delay: d * 0.92,
+      easing: 'cubic-bezier(0.22, 1, 0.36, 1)',
+      fill: 'forwards'
+    });
+
+    return el._a2.finished.then(() => {
+      lo.textContent = dispNext;
+      luWrap.style.display = 'none';
+      llWrap.style.display = 'none';
+      el._a1 = el._a2 = null;
+    }).catch(() => {});
   }
+
   async function spinTo(el, final, delay, steps) {
-    await new Promise(r => setTimeout(r, delay));
-    if (final !== ' ') {
+    if (delay > 0) await new Promise(r => setTimeout(r, delay));
+    if (final !== ' ' && !reduce) {
       const noise = isNarrow(final) ? NOISE_EN : NOISE_ZH;
-      for (let i = 0; i < steps && !reduce; i++) await flipTo(el, noise[Math.floor(Math.random() * noise.length)]);
+      for (let i = 0; i < steps; i++) {
+        await flipTo(el, noise[Math.floor(Math.random() * noise.length)]);
+      }
     }
     await flipTo(el, final);
   }
+
   function flaps(text, cells, cls, narrowCol) {
     const wrap = document.createElement('div');
     wrap.className = 'flaps ' + cls;
@@ -355,13 +724,19 @@
     }
     return wrap;
   }
-  function spinRow(row) {
-    row.querySelectorAll('.flap').forEach((el, i) => spinTo(el, el.dataset.final, i * 45, 3 + (i % 6) + Math.floor(Math.random() * 2)));
+
+  function spinRow(row, rowDelay = 0, fullSpin = true) {
+    const baseSteps = fullSpin ? 3 : 2;
+    const modSteps = fullSpin ? 5 : 3;
+    row.querySelectorAll('.flap').forEach((el, i) => {
+      const steps = el.dataset.final === ' ' ? 0 : baseSteps + (i % modSteps) + Math.floor(Math.random() * 2);
+      spinTo(el, el.dataset.final, rowDelay + i * 36, steps);
+    });
   }
 
   const flightNo = m => (m.love ? 'LV' : 'TY') + '-' + String(m.id - 1).padStart(3, '0');
 
-  function makeRow(m, boarding) {
+  function makeRow(m, boarding, rowDelay = 0, fullSpin = true) {
     const row = document.createElement('div');
     row.className = 'row grid slide ' + (m.love ? 'lv' : 'ty');
     row.dataset.id = m.id;
@@ -380,14 +755,14 @@
       playChime(); // 新訊息登機時響起機場叮咚廣播聲
       setTimeout(() => setStatus(false), BOARDING_MS);
     }
-    spinRow(row);
+    spinRow(row, rowDelay, fullSpin);
     return row;
   }
 
   function pushTop(m, boarding) {
     board.querySelector('.empty')?.remove();
     board.querySelector(`.row[data-id="${m.id}"]`)?.remove();
-    board.prepend(makeRow(m, boarding));
+    board.prepend(makeRow(m, boarding, 0, true));
     while (board.children.length > ROWS) board.lastElementChild.remove();
     onBoard = [...board.children].map(r => +r.dataset.id);
   }
@@ -395,7 +770,8 @@
   function renderInitial() {
     board.innerHTML = '';
     if (!pool.length) { board.innerHTML = '<div class="empty">候機中⋯⋯等待第一位旅客留下真心話</div>'; return; }
-    pool.slice(0, ROWS).forEach(m => board.appendChild(makeRow(m, false)));
+    // 初次載入由上而下錯開啟動，避免所有字格同一毫秒齊翻造成卡頓
+    pool.slice(0, ROWS).forEach((m, idx) => board.appendChild(makeRow(m, false, idx * 85, false)));
     onBoard = pool.slice(0, ROWS).map(m => m.id);
     rotatePtr = ROWS;
   }

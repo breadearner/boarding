@@ -6,18 +6,21 @@
 <title>候機室的真心話｜登機報到</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Noto+Sans+TC:wght@400;500;700;900&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Noto+Sans+TC:wght@400;500;700;900&display=swap">
 <style>
-  /* 版面：深色候機室背景上一張紙本登機證。上段填寫，撕線以下是送出／報到結果與專屬桌布好禮 */
+  /* 版面：深黑候機室背景上一張暖米白紙本登機證（經典機場黑黃配色）。上段填寫，撕線以下是送出／報到結果與專屬桌布好禮 */
   :root {
-    --case: #0c0d0f;       /* 候機室背景，與看板相同 */
-    --paper: #f6f2e8;      /* 登機證紙色 */
+    --case: #0c0d0f;       /* 候機室深黑背景，與看板相同 */
+    --case-hi: #16181d;    /* 頂部環境微光 */
+    --case-lo: #08090b;    /* 底部深黑 */
+    --paper: #f6f2e8;      /* 登機證紙色（暖米白） */
     --paper-2: #ebe5d6;    /* 紙上的欄位底 */
-    --ink: #1b1c1f;
+    --line: #cfc7b5;       /* 票面分隔線與撕線 */
+    --ink: #1b1c1f;        /* 票面主要深墨色 */
     --ink-2: #6d6a62;      /* 紙上的次要文字 */
     --sign: #f5c518;       /* 機場黃 */
-    --ty: #1f9e6e;         /* 道謝（紙上用較深的綠） */
-    --lv: #d9467a;         /* 道愛（紙上用較深的粉） */
+    --ty: #1f9e6e;         /* 道謝 TY（紙上用較深的綠） */
+    --lv: #d9467a;         /* 道愛 LV（紙上用較深的粉） */
     --danger: #c0392b;
     --font-zh: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
     --font-sign: "Barlow Condensed", "Arial Narrow", "Roboto Condensed", sans-serif;
@@ -25,72 +28,261 @@
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html { background: var(--case); }
-  body { min-height: 100vh; background: var(--case); color: var(--paper); font-family: var(--font-zh);
+  body {
+    min-height: 100vh;
+    background: linear-gradient(180deg, var(--case-hi) 0%, var(--case) 28%, var(--case-lo) 100%);
+    background-attachment: fixed;
+    color: var(--paper);
+    font-family: var(--font-zh);
     padding: max(20px, env(safe-area-inset-top)) 16px max(28px, env(safe-area-inset-bottom));
-    display: flex; flex-direction: column; align-items: center; gap: 18px; -webkit-tap-highlight-color: transparent; }
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 18px;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-font-smoothing: antialiased;
+  }
   [hidden] { display: none !important; }
 
-  .top { width: 100%; max-width: 420px; display: flex; align-items: center; gap: 12px; }
-  .pict { width: 40px; height: 40px; border-radius: 8px; background: var(--sign); display: grid; place-items: center; flex: none; }
-  .pict svg { width: 70%; height: 70%; }
-  .top b { display: block; font-size: 17px; font-weight: 700; letter-spacing: .08em; }
-  .top span { font-family: var(--font-sign); font-size: 13px; font-weight: 600; letter-spacing: .28em; color: var(--sign); }
+  /* ===== 頂部航廈標頭（與看板標頭同語彙） ===== */
+  .top {
+    width: 100%;
+    max-width: 420px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .pict {
+    width: 42px;
+    height: 42px;
+    border-radius: 8px;
+    background: linear-gradient(180deg, #ffd438 0%, var(--sign) 100%);
+    border: 1px solid rgba(255, 255, 255, .25);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .45), 0 4px 10px rgba(0, 0, 0, .45);
+    display: grid;
+    place-items: center;
+    flex: none;
+  }
+  .pict svg { width: 68%; height: 68%; }
+  .top b {
+    display: block;
+    font-size: 18px;
+    font-weight: 900;
+    letter-spacing: .08em;
+    color: var(--paper);
+  }
+  .top span {
+    font-family: var(--font-sign), var(--font-zh);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: .26em;
+    color: var(--sign);
+  }
 
-  /* ===== 登機證 ===== */
-  .pass { width: 100%; max-width: 420px; background: var(--paper); color: var(--ink); border-radius: 18px;
-    box-shadow: 0 18px 40px rgba(0, 0, 0, .45); position: relative; }
-  .band { background: var(--sign); border-radius: 18px 18px 0 0; padding: 12px 18px; display: flex; justify-content: space-between; align-items: center; }
-  .band .label { font-family: var(--font-sign); font-weight: 700; font-size: 15px; letter-spacing: .22em; line-height: 1.1; }
-  .band .label small { display: block; font-family: var(--font-zh); font-size: 12px; font-weight: 700; letter-spacing: .3em; }
-  .band .flight { font-family: var(--font-sign); font-weight: 700; font-size: 30px; letter-spacing: .06em; font-variant-numeric: tabular-nums; }
+  /* ===== 登機證本體 ===== */
+  .pass {
+    width: 100%;
+    max-width: 420px;
+    background: var(--paper);
+    color: var(--ink);
+    border-radius: 18px;
+    box-shadow: 0 20px 44px rgba(0, 0, 0, .55), 0 0 0 1px rgba(255, 255, 255, .08);
+    position: relative;
+    overflow: hidden;
+  }
+  .pass.ty { --c: var(--ty); }
+  .pass.lv { --c: var(--lv); }
+
+  /* 登機證頂部色帶：經典機場黃色帶 */
+  .band {
+    background: linear-gradient(180deg, #ffd230 0%, var(--sign) 100%);
+    border-bottom: 1px solid rgba(0, 0, 0, .12);
+    padding: 12px 18px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: var(--ink);
+  }
+  .band .label {
+    font-family: var(--font-sign);
+    font-weight: 700;
+    font-size: 15px;
+    letter-spacing: .22em;
+    line-height: 1.1;
+  }
+  .band .label small {
+    display: block;
+    font-family: var(--font-zh);
+    font-size: 12px;
+    font-weight: 900;
+    letter-spacing: .3em;
+    margin-bottom: 2px;
+  }
+  .band .flight {
+    font-family: var(--font-sign);
+    font-weight: 700;
+    font-size: 30px;
+    letter-spacing: .06em;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink);
+  }
 
   .body { padding: 16px 18px 18px; display: flex; flex-direction: column; gap: 16px; position: relative; }
-  .cap { font-family: var(--font-sign); font-size: 12px; font-weight: 600; letter-spacing: .22em; color: var(--ink-2); text-transform: uppercase; }
-  .cap b { font-family: var(--font-zh); font-weight: 700; letter-spacing: .12em; margin-right: 6px; color: var(--ink); }
+  .cap {
+    font-family: var(--font-sign);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: .22em;
+    color: var(--ink-2);
+    text-transform: uppercase;
+  }
+  .cap b {
+    font-family: var(--font-zh);
+    font-weight: 900;
+    letter-spacing: .12em;
+    margin-right: 6px;
+    color: var(--ink);
+  }
 
   .route { display: grid; grid-template-columns: auto 1fr auto; align-items: end; gap: 12px; }
-  .route .from .big { font-size: 28px; font-weight: 900; line-height: 1.15; }
+  .route .from .big { font-size: 28px; font-weight: 900; line-height: 1.15; color: var(--ink); }
   .route .plane { width: 28px; height: 28px; margin-bottom: 8px; color: var(--ink-2); }
   .route .to { min-width: 0; text-align: right; }
-  .route input { width: 100%; font: 900 28px/1.15 var(--font-zh); color: var(--c, var(--ink)); background: none; border: 0;
-    border-bottom: 2px dashed var(--ink-2); text-align: right; padding: 2px 0; border-radius: 0; }
-  .route input::placeholder { color: #b9b2a2; }
+  .route input {
+    width: 100%;
+    font: 900 28px/1.15 var(--font-zh);
+    color: var(--c, var(--ink));
+    background: none;
+    border: 0;
+    border-bottom: 2px dashed var(--ink-2);
+    text-align: right;
+    padding: 2px 0;
+    border-radius: 0;
+    transition: border-color .2s, color .2s;
+  }
+  .route input::placeholder { color: #b9b2a2; font-weight: 700; }
   .route input:focus { outline: none; border-bottom-style: solid; border-bottom-color: var(--ink); }
 
   .class { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   .class input { position: absolute; opacity: 0; pointer-events: none; }
-  .class label { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 8px; border-radius: 10px;
-    background: var(--paper-2); border: 2px solid transparent; font-weight: 700; font-size: 17px; cursor: pointer; }
-  .class label span { font-family: var(--font-sign); font-size: 14px; letter-spacing: .12em; color: var(--ink-2); }
-  #tyOpt:checked + label { border-color: var(--ty); color: var(--ty); background: #e2efe6; }
-  #lvOpt:checked + label { border-color: var(--lv); color: var(--lv); background: #f5e1e6; }
+  .class label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 8px;
+    border-radius: 10px;
+    background: var(--paper-2);
+    border: 2px solid transparent;
+    font-weight: 900;
+    font-size: 17px;
+    color: var(--ink);
+    cursor: pointer;
+    transition: background .18s, border-color .18s, color .18s;
+  }
+  .class label span {
+    font-family: var(--font-sign);
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: .14em;
+    color: var(--ink-2);
+  }
+  #tyOpt:checked + label {
+    border-color: var(--ty);
+    color: var(--ty);
+    background: #e2efe6;
+  }
+  #tyOpt:checked + label span { color: var(--ty); }
+  #lvOpt:checked + label {
+    border-color: var(--lv);
+    color: var(--lv);
+    background: #f5e1e6;
+  }
+  #lvOpt:checked + label span { color: var(--lv); }
   .class input:focus-visible + label { outline: 3px solid var(--sign); outline-offset: 2px; }
 
-  .ask { font-size: 15px; font-weight: 700; line-height: 1.5; }
+  .ask { font-size: 15px; font-weight: 900; line-height: 1.5; color: var(--ink); }
   .msg { position: relative; }
-  .msg textarea { width: 100%; resize: none; font: 700 22px/1.45 var(--font-zh); color: var(--ink); background: var(--paper-2);
-    border: 2px solid transparent; border-radius: 10px; padding: 12px 14px 26px; }
+  .msg textarea {
+    width: 100%;
+    resize: none;
+    font: 700 22px/1.45 var(--font-zh);
+    color: var(--ink);
+    background: var(--paper-2);
+    border: 2px solid transparent;
+    border-radius: 10px;
+    padding: 12px 14px 26px;
+    transition: border-color .2s;
+  }
   .msg textarea::placeholder { color: #aaa392; font-weight: 500; }
   .msg textarea:focus { outline: none; border-color: var(--ink); }
-  .counter { position: absolute; right: 12px; bottom: 8px; font-family: var(--font-sign); font-size: 14px; font-weight: 600;
-    letter-spacing: .08em; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+  .counter {
+    position: absolute;
+    right: 12px;
+    bottom: 8px;
+    font-family: var(--font-sign);
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: .08em;
+    color: var(--ink-2);
+    font-variant-numeric: tabular-nums;
+  }
   .counter.over { color: var(--danger); }
 
-  .facts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .facts {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+  }
   .facts div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
   .facts .cap b { display: block; margin: 0; }
-  .facts strong { font-size: 15px; font-weight: 700; }
+  .facts strong { font-size: 15px; font-weight: 900; color: var(--ink); }
 
-  /* 撕線 */
-  .tear { position: relative; height: 0; border-top: 2px dashed #cfc7b5; margin: 0 18px; }
-  .tear::before, .tear::after { content: ""; position: absolute; top: -13px; width: 24px; height: 24px; border-radius: 50%; background: var(--case); }
-  .tear::before { left: -31px; } .tear::after { right: -31px; }
+  /* 撕線與兩側打孔切口 */
+  .tear { position: relative; height: 0; border-top: 2px dashed var(--line); margin: 0 18px; }
+  .tear::before, .tear::after {
+    content: "";
+    position: absolute;
+    top: -13px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--case);
+  }
+  .tear::before { left: -31px; }
+  .tear::after { right: -31px; }
 
   .stub { padding: 18px; display: flex; flex-direction: column; gap: 12px; }
-  .go { width: 100%; padding: 16px; border: 0; border-radius: 12px; background: var(--ink); color: var(--sign);
-    font: 700 18px var(--font-zh); letter-spacing: .12em; cursor: pointer; display: flex; justify-content: center; align-items: baseline; gap: 10px; }
-  .go span { font-family: var(--font-sign); font-size: 15px; letter-spacing: .24em; }
-  .go:disabled { background: #cfc7b5; color: #8a8374; cursor: not-allowed; }
+  .go {
+    width: 100%;
+    padding: 16px;
+    border: 0;
+    border-radius: 12px;
+    background: var(--ink);
+    color: var(--sign);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, .22);
+    font: 900 18px var(--font-zh);
+    letter-spacing: .12em;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: baseline;
+    gap: 10px;
+    transition: transform .12s, background .2s;
+  }
+  .go span {
+    font-family: var(--font-sign);
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: .24em;
+  }
+  .go:active:not(:disabled) { transform: translateY(1px); }
+  .go:disabled {
+    background: #cfc7b5;
+    color: #8a8374;
+    box-shadow: none;
+    cursor: not-allowed;
+  }
   .go:focus-visible { outline: 3px solid var(--sign); outline-offset: 3px; }
   .err { color: var(--danger); font-size: 14px; font-weight: 700; text-align: center; min-height: 1em; }
   .hint { font-size: 12px; color: var(--ink-2); text-align: center; line-height: 1.6; }
@@ -99,59 +291,196 @@
 
   /* 報到完成與印章 */
   .done { display: flex; flex-direction: column; gap: 14px; align-items: center; text-align: center; position: relative; }
-  .barcode-wrap { width: 100%; position: relative; padding: 2px 0 6px; margin-bottom: 2px; border-bottom: 1.5px solid #dfd8c8; padding-bottom: 16px; }
-  .barcode { width: 100%; height: 46px; border-radius: 4px;
-    background: repeating-linear-gradient(90deg, var(--ink) 0 2px, transparent 2px 4px, var(--ink) 4px 7px, transparent 7px 9px, var(--ink) 9px 10px, transparent 10px 13px); }
-  .stamp { position: absolute; right: 8px; top: -8px; padding: 6px 12px; border: 3px solid var(--c, var(--ty)); color: var(--c, var(--ty));
-    border-radius: 8px; transform: rotate(-12deg); font-weight: 900; font-size: 18px; letter-spacing: .1em; line-height: 1.1; text-align: center;
-    background: rgba(246, 242, 232, .92); animation: stamp .35s cubic-bezier(.2, 1.6, .5, 1) both; pointer-events: none; z-index: 5; }
-  .stamp span { display: block; font-family: var(--font-sign); font-size: 13px; letter-spacing: .24em; }
+  .barcode-wrap {
+    width: 100%;
+    position: relative;
+    padding: 2px 0 16px;
+    margin-bottom: 2px;
+    border-bottom: 1.5px solid #dfd8c8;
+  }
+  .barcode {
+    width: 100%;
+    height: 46px;
+    border-radius: 4px;
+    background: repeating-linear-gradient(
+      90deg,
+      var(--ink) 0 2px,
+      transparent 2px 4px,
+      var(--ink) 4px 7px,
+      transparent 7px 9px,
+      var(--ink) 9px 10px,
+      transparent 10px 13px
+    );
+  }
+  .stamp {
+    position: absolute;
+    right: 8px;
+    top: -8px;
+    padding: 6px 12px;
+    border: 3px solid var(--c, var(--ty));
+    color: var(--c, var(--ty));
+    border-radius: 8px;
+    transform: rotate(-12deg);
+    font-weight: 900;
+    font-size: 18px;
+    letter-spacing: .1em;
+    line-height: 1.1;
+    text-align: center;
+    background: rgba(246, 242, 232, .92);
+    animation: stamp .35s cubic-bezier(.2, 1.6, .5, 1) both;
+    pointer-events: none;
+    z-index: 5;
+  }
+  .stamp span {
+    display: block;
+    font-family: var(--font-sign);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: .24em;
+  }
   @keyframes stamp { from { transform: rotate(-12deg) scale(2.2); opacity: 0; } }
-  .pass.lv { --c: var(--lv); } .pass.ty { --c: var(--ty); }
 
-  .done .big { font-size: 20px; font-weight: 900; }
+  .done .big { font-size: 20px; font-weight: 900; color: var(--ink); }
   .done p { font-size: 14px; line-height: 1.7; color: var(--ink-2); }
-  .done p b { color: var(--ink); }
+  .done p b { font-family: var(--font-sign); font-size: 17px; letter-spacing: .06em; color: var(--ink); }
 
   /* 特殊關懷提醒（僅限 CONCERN 特殊留言才會出現） */
-  .care { width: 100%; background: #fff7d6; border: 1.5px solid #e2c267; border-radius: 12px; padding: 14px; font-size: 14px; line-height: 1.7; text-align: left; color: var(--ink); }
+  .care {
+    width: 100%;
+    background: #fff7d6;
+    border: 1.5px solid #e2c267;
+    border-radius: 12px;
+    padding: 14px;
+    font-size: 14px;
+    line-height: 1.7;
+    text-align: left;
+    color: var(--ink);
+  }
   .care p { color: var(--ink); font-size: 14px; }
-  .care .book { display: block; margin-top: 10px; padding: 12px; border-radius: 10px; background: var(--ink); color: var(--sign);
-    text-align: center; font-weight: 700; letter-spacing: .08em; text-decoration: none; }
+  .care .book {
+    display: block;
+    margin-top: 10px;
+    padding: 12px;
+    border-radius: 10px;
+    background: var(--ink);
+    color: var(--sign);
+    text-align: center;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-decoration: none;
+  }
 
   /* ===== 航程好禮：手機桌布抽卡與 IG 限動分享 ===== */
-  .gift { width: 100%; background: var(--paper-2); border-radius: 14px; padding: 14px; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+  .gift {
+    width: 100%;
+    background: var(--paper-2);
+    border-radius: 14px;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
   .gift-head { width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
   .gift-title { font-size: 14px; font-weight: 900; color: var(--ink); display: flex; align-items: center; gap: 6px; }
-  .gift-badge { font-family: var(--font-sign); font-size: 12px; font-weight: 700; letter-spacing: .1em; background: var(--ink); color: var(--sign); padding: 2px 7px; border-radius: 99px; }
-  .wp-next { background: var(--paper); border: 1.5px solid #d5cdbc; border-radius: 8px; padding: 5px 10px;
-    font: 700 13px var(--font-zh); color: var(--ink); cursor: pointer; display: inline-flex; align-items: center; gap: 4px; transition: transform .1s; }
+  .wp-next {
+    background: var(--paper);
+    border: 1.5px solid #d5cdbc;
+    border-radius: 8px;
+    padding: 5px 10px;
+    font: 700 13px var(--font-zh);
+    color: var(--ink);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: transform .1s;
+  }
   .wp-next:active { transform: scale(.96); }
 
-  .wp-card { width: 100%; max-width: 210px; aspect-ratio: 9 / 16; border-radius: 12px; overflow: hidden;
-    box-shadow: 0 10px 24px rgba(0, 0, 0, .22); background: #222; position: relative; }
+  .wp-card {
+    width: 100%;
+    max-width: 210px;
+    aspect-ratio: 9 / 16;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 10px 24px rgba(0, 0, 0, .22);
+    background: #222;
+    position: relative;
+  }
   .wp-card img { width: 100%; height: 100%; object-fit: cover; display: block; -webkit-touch-callout: default; }
   .wp-quote { font-size: 13px; font-weight: 700; color: var(--ink-2); line-height: 1.5; padding: 0 6px; }
 
   .wp-actions { width: 100%; display: grid; grid-template-columns: 1fr; gap: 8px; }
-  .btn-share { width: 100%; padding: 13px 14px; border: 0; border-radius: 10px;
-    background: linear-gradient(135deg, #833ab4, #fd1d1d, #fcb045); color: #fff;
-    font: 700 15px var(--font-zh); letter-spacing: .06em; cursor: pointer;
-    display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 12px rgba(253, 29, 29, .25); }
+  .btn-share {
+    width: 100%;
+    padding: 13px 14px;
+    border: 0;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #833ab4, #fd1d1d, #fcb045);
+    color: #fff;
+    font: 700 15px var(--font-zh);
+    letter-spacing: .06em;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    box-shadow: 0 4px 12px rgba(253, 29, 29, .25);
+  }
   .btn-share:active { transform: scale(.98); }
-  .btn-dl { width: 100%; padding: 11px 14px; border: 1.5px solid var(--ink); border-radius: 10px;
-    background: var(--paper); color: var(--ink); font: 700 14px var(--font-zh); letter-spacing: .06em;
-    cursor: pointer; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 6px; }
+  .btn-dl {
+    width: 100%;
+    padding: 11px 14px;
+    border: 1.5px solid var(--ink);
+    border-radius: 10px;
+    background: var(--paper);
+    color: var(--ink);
+    font: 700 14px var(--font-zh);
+    letter-spacing: .06em;
+    cursor: pointer;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
   .btn-dl:active { transform: scale(.98); }
-  .wp-tip { font-size: 12px; color: var(--ink-2); line-height: 1.5; }
   .wp-toast { font-size: 13px; font-weight: 700; color: var(--ty); min-height: 1.2em; }
 
-  .btn-ig-follow { width: 100%; padding: 11px 14px; border-radius: 10px; background: var(--ink); color: var(--sign);
-    font: 700 14px var(--font-zh); letter-spacing: .06em; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 6px; }
+  .btn-ig-follow {
+    width: 100%;
+    padding: 11px 14px;
+    border-radius: 10px;
+    background: var(--ink);
+    color: var(--sign);
+    font: 700 14px var(--font-zh);
+    letter-spacing: .06em;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
 
-  .again { background: none; border: 0; font: 700 14px var(--font-zh); color: var(--ink-2); text-decoration: underline; text-underline-offset: 4px; cursor: pointer; padding: 4px; }
+  .again {
+    background: none;
+    border: 0;
+    font: 700 14px var(--font-zh);
+    color: var(--ink-2);
+    text-decoration: underline;
+    text-underline-offset: 4px;
+    cursor: pointer;
+    padding: 4px;
+  }
 
-  .foot { max-width: 420px; font-size: 12px; line-height: 1.7; color: #8b8e96; text-align: center; }
+  .foot {
+    max-width: 420px;
+    font-size: 12px;
+    line-height: 1.7;
+    color: #8b8e96;
+    text-align: center;
+  }
 
   @media (prefers-reduced-motion: reduce) { .stamp { animation: none; } }
 </style>
@@ -264,9 +593,10 @@
   let IG_URL = /^https?:\/\//.test(window.IG_URL || '') ? window.IG_URL.trim() : '';
 
   // ===== Cloudflare Turnstile 真人驗證（config.js 有填 Site Key 才啟用）=====
-  // interaction-only：多數人完全看不到，只有可疑時才會跳出勾選框。權杖只能用一次，每次送出後都要重置
+  // 提示：Cloudflare Turnstile 僅支援 http/https 網域；以本機 file:// 直接開啟預覽時自動略過驗證，方便本地測試畫面
+  const IS_FILE = location.protocol === 'file:' || /[?&]demo\b/.test(location.search);
   const TS_KEY = String(window.TURNSTILE_SITEKEY || '').trim();
-  const NEED_TS = LIVE && !!TS_KEY;
+  const NEED_TS = LIVE && !!TS_KEY && !IS_FILE;
   let tsId = null, tsToken = '', tsErr = '';
   if (NEED_TS) {
     window.onTsLoad = () => {
@@ -416,20 +746,20 @@
     go.firstChild.textContent = '報到中⋯ ';
     const data = { type: type(), to: to.value.trim(), text: text.value.trim() };
     if (NEED_TS) data.token = tsToken;
-    if (LIVE) {
+    if (LIVE && !IS_FILE) {
       // 不設 Content-Type（預設 text/plain），瀏覽器就不會先發預檢請求，Apps Script 才收得到
       fetch(API, { method: 'POST', body: JSON.stringify(data) })
         .then(r => r.json())
         .then(res => res.ok ? done(res) : fail(new Error(res.error)))
         .catch(() => fail());
     } else {
-      // 示範模式：若網址帶 ?care 或輸入內容含危機測試詞，即展示特殊關懷彈窗
+      // 本機 file:// 預覽或示範模式：即時模擬送出，展示已報到畫面、蓋章與桌布抽卡
       const demoCare = /care/.test(location.search) || /想死|不想活|活不下去|撐不下去|輕生|尋短|消失就好|死一死|4一4/.test(data.to + data.text);
       setTimeout(() => done({
         flight: (data.type === '道愛' ? 'LV' : 'TY') + '-0' + (20 + Math.floor(Math.random() * 60)),
         pending: demoCare,
         care: demoCare,
-      }), 450);
+      }), 400);
     }
   });
 
@@ -496,6 +826,10 @@
     refresh(); to.focus();
   });
 
+  if (IS_FILE) {
+    const hint = $('stub').querySelector('.hint');
+    if (hint) hint.textContent = '不記名。你的真心話會以航班形式出現在大螢幕上。（本機預覽模式：已自動略過真人驗證，可直接填寫並點擊送出預覽報到畫面）';
+  }
   refresh();
 </script>
 </body>
